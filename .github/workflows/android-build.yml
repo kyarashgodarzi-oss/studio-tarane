@@ -25,22 +25,34 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Grant Execute Permission for gradlew
-        run: chmod +x gradlew
+      - name: Download Gradle Wrapper Files
+        run: |
+          wget -q https://raw.githubusercontent.com/android/architecture-samples/main/gradlew -O gradlew
+          wget -q https://raw.githubusercontent.com/android/architecture-samples/main/gradlew.bat -O gradlew.bat
+          wget -q https://raw.githubusercontent.com/android/architecture-samples/main/gradle/wrapper/gradle-wrapper.jar -O gradle/wrapper/gradle-wrapper.jar
+          chmod +x gradlew
+          echo "Gradle Wrapper files downloaded successfully"
+
+      - name: Verify Files
+        run: |
+          ls -la gradlew
+          ls -la gradle/wrapper/
+          cat gradle/wrapper/gradle-wrapper.properties
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
+        run: ./gradlew assembleRelease --stacktrace --no-daemon
 
       - name: Build Release AAB
-        run: ./gradlew bundleRelease --stacktrace
+        run: ./gradlew bundleRelease --stacktrace --no-daemon
 
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: ./gradlew testDebugUnitTest --stacktrace --no-daemon
 
       - name: Upload Debug APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: studio-taraneh-debug-apk
@@ -48,6 +60,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Release APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: studio-taraneh-release-apk
@@ -55,6 +68,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Release AAB
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: studio-taraneh-release-aab
