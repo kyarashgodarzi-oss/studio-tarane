@@ -1,0 +1,74 @@
+<resources>
+    <string name="app_name">Studio Taraneh</string>
+    <string name="app_title_fa">Studio Taraneh</string>
+    <string name="creator_name">Seyyed Hamid Mousavi Zadeh</string>
+    <string name="app_version">Version 1.0.0</string>
+    <string name="app_subtitle">Songwriting Notebook, Rhythm Maker &amp; Pro Recording</string>
+
+    <!-- Navigation Hub -->
+    <string name="menu_my_songs">My Songs</string>
+    <string name="menu_new_song">New Song</string>
+    <string name="menu_voice_recorder">Voice Recording Studio</string>
+    <string name="menu_rhythm_maker">Rhythm Maker &amp; Metronome</string>
+    <string name="menu_favorites">Favorites</string>
+    <string name="menu_recent">Recent Songs</string>
+    <string name="menu_trash">Trash</string>
+    <string name="menu_backup">Backup &amp; Export</string>
+    <string name="menu_settings">Studio Settings</string>
+    <string name="menu_vip">VIP Subscription</string>
+
+    <!-- Song Fields -->
+    <string name="song_title">Song Title</string>
+    <string name="song_artist">Artist / Performer</string>
+    <string name="song_genre">Main Genre</string>
+    <string name="song_subgenre">Subgenre</string>
+    <string name="song_status">Song Status</string>
+    <string name="song_bpm">BPM Tempo</string>
+    <string name="song_time_signature">Time Signature</string>
+    <string name="song_tags">Tags</string>
+    <string name="song_description">Notes &amp; Description</string>
+
+    <!-- Sections -->
+    <string name="section_intro">Intro</string>
+    <string name="section_verse">Verse</string>
+    <string name="section_chorus">Chorus</string>
+    <string name="section_pre_chorus">Pre-Chorus</string>
+    <string name="section_bridge">Bridge</string>
+    <string name="section_hook">Hook</string>
+    <string name="section_outro">Outro</string>
+    <string name="section_refrain">Refrain</string>
+    <string name="section_custom">Custom Section</string>
+
+    <!-- Actions -->
+    <string name="action_save">Save Song</string>
+    <string name="action_copy_all">Copy Full Lyrics</string>
+    <string name="action_copy_section">Copy Section</string>
+    <string name="action_share">Share</string>
+    <string name="action_export_txt">Export Text File (TXT)</string>
+    <string name="action_export_project">Export Project (.taraneh)</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_redo">Redo</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_permanent_delete">Delete Permanently</string>
+    <string name="action_empty_trash">Empty Trash</string>
+    <string name="action_record">Record Audio</string>
+    <string name="action_stop_record">Stop Recording</string>
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+
+    <!-- Settings & Themes -->
+    <string name="theme_neon_studio">Neon Studio</string>
+    <string name="theme_midnight">Midnight</string>
+    <string name="theme_graphite">Graphite</string>
+    <string name="theme_purple_night">Purple Night</string>
+    <string name="theme_silver_studio">Silver Studio</string>
+    <string name="theme_amoled">AMOLED Black</string>
+
+    <!-- Common -->
+    <string name="search_hint">Search title, lyrics, artist, tags &amp; genre...</string>
+    <string name="empty_songs">No songs in this section.</string>
+    <string name="empty_trash">Trash is empty.</string>
+    <string name="empty_favorites">No songs added to favorites yet.</string>
+    <string name="record_permission_required">Microphone permission is required to record audio.</string>
+</resources>

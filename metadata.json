@@ -1,0 +1,6 @@
+{
+  "name": "استودیو ترانه",
+  "description": "Professional songwriting studio, lyrics notebook, rhythm maker and audio recording for songs and poems.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

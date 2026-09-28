@@ -1,0 +1,74 @@
+<resources>
+    <string name="app_name">استودیو ترانه</string>
+    <string name="app_title_fa">استودیو ترانه</string>
+    <string name="creator_name">سیدحمید موسوی زاده</string>
+    <string name="app_version">نسخه 1.0.0</string>
+    <string name="app_subtitle">دفترچه ترانه‌سرایی، ساخت ریتم و ضبط حرفه‌ای</string>
+
+    <!-- Navigation Hub -->
+    <string name="menu_my_songs">ترانه‌های من</string>
+    <string name="menu_new_song">ترانه جدید</string>
+    <string name="menu_voice_recorder">استودیو ضبط صدا</string>
+    <string name="menu_rhythm_maker">ریتم‌ساز و مترونوم</string>
+    <string name="menu_favorites">علاقه‌مندی‌ها</string>
+    <string name="menu_recent">ترانه‌های اخیر</string>
+    <string name="menu_trash">سطل زباله</string>
+    <string name="menu_backup">پشتیبان‌گیری و خروجی</string>
+    <string name="menu_settings">تنظیمات استودیو</string>
+    <string name="menu_vip">اشتراک ویژه VIP</string>
+
+    <!-- Song Fields -->
+    <string name="song_title">عنوان ترانه</string>
+    <string name="song_artist">نام خواننده / هنرمند</string>
+    <string name="song_genre">سبک اصلی</string>
+    <string name="song_subgenre">زیرسبک</string>
+    <string name="song_status">وضعیت ترانه</string>
+    <string name="song_bpm">ضرب‌آهنگ (BPM)</string>
+    <string name="song_time_signature">میزان‌نما</string>
+    <string name="song_tags">برچسب‌ها</string>
+    <string name="song_description">یادداشت و توضیحات</string>
+
+    <!-- Sections -->
+    <string name="section_intro">مقدمه (Intro)</string>
+    <string name="section_verse">بند / ورس (Verse)</string>
+    <string name="section_chorus">هم‌خوان / کروس (Chorus)</string>
+    <string name="section_pre_chorus">پیش‌هم‌خوان (Pre-Chorus)</string>
+    <string name="section_bridge">پل (Bridge)</string>
+    <string name="section_hook">هوک (Hook)</string>
+    <string name="section_outro">بخش پایانی (Outro)</string>
+    <string name="section_refrain">ترجیع‌بند (Refrain)</string>
+    <string name="section_custom">بخش دلخواه</string>
+
+    <!-- Actions -->
+    <string name="action_save">ذخیره ترانه</string>
+    <string name="action_copy_all">کپی متن کامل ترانه</string>
+    <string name="action_copy_section">کپی این بخش</string>
+    <string name="action_share">اشتراک‌گذاری</string>
+    <string name="action_export_txt">خروجی فایل متنی (TXT)</string>
+    <string name="action_export_project">خروجی پروژه (.taraneh)</string>
+    <string name="action_undo">بازگشت (Undo)</string>
+    <string name="action_redo">تکرار مجدد (Redo)</string>
+    <string name="action_restore">بازیابی</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_permanent_delete">حذف دائمی</string>
+    <string name="action_empty_trash">تخلیه کامل سطل زباله</string>
+    <string name="action_record">ضبط صدا</string>
+    <string name="action_stop_record">توقف ضبط</string>
+    <string name="action_play">پخش</string>
+    <string name="action_pause">مکث</string>
+
+    <!-- Settings & Themes -->
+    <string name="theme_neon_studio">استودیو نئون</string>
+    <string name="theme_midnight">نیمه‌شب</string>
+    <string name="theme_graphite">گرافیتی</string>
+    <string name="theme_purple_night">شب بنفش</string>
+    <string name="theme_silver_studio">استودیو نقره‌ای</string>
+    <string name="theme_amoled">مشکی مطلق (AMOLED)</string>
+
+    <!-- Common -->
+    <string name="search_hint">جستجو در عنوان، متن، خواننده، برچسب‌ها و سبک...</string>
+    <string name="empty_songs">هیچ ترانه‌ای در این بخش وجود ندارد.</string>
+    <string name="empty_trash">سطل زباله خالی است.</string>
+    <string name="empty_favorites">هنوز ترانه‌ای به علاقه‌مندی‌ها اضافه نشده است.</string>
+    <string name="record_permission_required">برای ضبط صدا، مجوز دسترسی به میکروفون نیاز است.</string>
+</resources>
