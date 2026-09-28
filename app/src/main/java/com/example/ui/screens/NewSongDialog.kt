@@ -39,26 +39,22 @@ fun NewSongDialog(
         title: String,
         artist: String,
         genre: String,
-        subGenre: String,
-        status: String,
+        subgenre: String,
         bpm: Int,
         timeSignature: String,
-        tags: String,
-        notes: String
+        description: String,
+        tags: String
     ) -> Unit
 ) {
-    // ✅ متغیرهای ورودی — همه تعریف شده‌اند
     var newSongTitle by remember { mutableStateOf("") }
     var newSongArtist by remember { mutableStateOf("") }
     var newSongGenre by remember { mutableStateOf("Pop") }
-    var newSongSub by remember { mutableStateOf("Pop") }        // ✅ اینجا تعریف شد
-    var newSongStatus by remember { mutableStateOf("Draft") }
+    var newSongSub by remember { mutableStateOf("Pop") }
     var newSongBpm by remember { mutableStateOf("120") }
     var newSongTimeSignature by remember { mutableStateOf("4/4") }
+    var newSongDescription by remember { mutableStateOf("") }
     var newSongTags by remember { mutableStateOf("") }
-    var newSongNotes by remember { mutableStateOf("") }
 
-    // لیست سبک‌ها
     val genres = listOf("Pop", "Rap", "Rock", "Traditional", "Custom")
     val subGenres = when (newSongGenre) {
         "Pop" -> listOf(
@@ -73,7 +69,6 @@ fun NewSongDialog(
         "Traditional" -> listOf("Traditional", "Folk", "Classical")
         else -> listOf("Custom")
     }
-    val statuses = listOf("Draft", "In Progress", "Recorded", "Released")
     val timeSignatures = listOf("4/4", "3/4", "2/4", "6/8", "12/8")
 
     Dialog(onDismissRequest = onDismiss) {
@@ -119,7 +114,6 @@ fun NewSongDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // انتخاب سبک
                 Text("سبک اصلی", style = MaterialTheme.typography.labelLarge)
                 Spacer(modifier = Modifier.height(4.dp))
                 FlowRow(
@@ -147,7 +141,6 @@ fun NewSongDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // انتخاب زیرسبک
                 Text("زیرسبک", style = MaterialTheme.typography.labelLarge)
                 Spacer(modifier = Modifier.height(4.dp))
                 FlowRow(
@@ -166,26 +159,6 @@ fun NewSongDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // وضعیت ترانه
-                Text("وضعیت ترانه", style = MaterialTheme.typography.labelLarge)
-                Spacer(modifier = Modifier.height(4.dp))
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    statuses.forEach { status ->
-                        FilterChip(
-                            selected = status == newSongStatus,
-                            onClick = { newSongStatus = status },
-                            label = { Text(status) }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // BPM و میزان
                 Row(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = newSongBpm,
@@ -222,9 +195,9 @@ fun NewSongDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
-                    value = newSongNotes,
-                    onValueChange = { newSongNotes = it },
-                    label = { Text("یادداشت‌ها") },
+                    value = newSongDescription,
+                    onValueChange = { newSongDescription = it },
+                    label = { Text("توضیحات") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)
@@ -232,7 +205,6 @@ fun NewSongDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // دکمه‌ها
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -249,11 +221,10 @@ fun NewSongDialog(
                                     newSongArtist,
                                     newSongGenre,
                                     newSongSub,
-                                    newSongStatus,
                                     newSongBpm.toIntOrNull() ?: 120,
                                     newSongTimeSignature,
-                                    newSongTags,
-                                    newSongNotes
+                                    newSongDescription,
+                                    newSongTags
                                 )
                             }
                         }
