@@ -33,15 +33,11 @@ jobs:
           chmod +x gradlew
           echo "Gradle Wrapper files downloaded successfully"
 
-      - name: Fix Gradle Version
-        run: |
-          sed -i 's|gradle-9.3.1-bin.zip|gradle-8.5-bin.zip|g' gradle/wrapper/gradle-wrapper.properties
-          cat gradle/wrapper/gradle-wrapper.properties
-
       - name: Verify Files
         run: |
           ls -la gradlew
           ls -la gradle/wrapper/
+          cat gradle/wrapper/gradle-wrapper.properties
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace --no-daemon
