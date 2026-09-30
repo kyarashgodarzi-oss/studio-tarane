@@ -229,6 +229,22 @@ fun VoiceStudioScreen(
             }
         }
 
+        Button(
+            onClick = {
+                context.startActivity(
+                    Intent(context, com.example.ads.AdsShowcaseActivity::class.java)
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Text("ویدیوی آموزشی استودیو")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         // Section Title: Saved Memos
         Row(
             modifier = Modifier
