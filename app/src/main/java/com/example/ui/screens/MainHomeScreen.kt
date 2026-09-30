@@ -277,10 +277,12 @@ fun MainHomeScreen(
                 )
             }
 
-            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-                TapsellNativeVideo(
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
-                )
+            if (!isVip) {
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
+                    TapsellNativeVideo(
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+                    )
+                }
             }
         }
 
