@@ -109,6 +109,30 @@ object TapsellAds {
 }
 
 @Composable
+fun TapsellNativeVideo(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val activity = context as? Activity ?: return
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(260.dp)
+    ) {
+        AndroidView(
+            modifier = Modifier.fillMaxWidth(),
+            factory = {
+                FrameLayout(context).also { container ->
+                    container.layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    TapsellAds.showNativeVideo(activity, container)
+                }
+            }
+        )
+    }
+}
+
+@Composable
 fun TapsellBanner(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val activity = context as? Activity ?: return
