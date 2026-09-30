@@ -149,7 +149,7 @@ class AdsShowcaseActivity : ComponentActivity() {
         player?.release()
         player = null
         adsLoader = null
-        if (::adUiContainer.isInitialized) adUiContainer.removeAllViews()
+        // Keep the player/ad containers attached so the video can be requested again safely.
         if (::companionContainer.isInitialized) companionContainer.removeAllViews()
     }
 
