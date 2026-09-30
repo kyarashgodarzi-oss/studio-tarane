@@ -14,16 +14,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/**
- * مدیر خرید درون‌برنامه‌ای کافه‌بازار
- * با استفاده از کتابخانه Poolakey
- */
 class BazaarBillingManager(private val context: Context) {
 
     companion object {
         private const val TAG = "BazaarBilling"
-
-        /** لیست تمام SKUهای VIP */
         val ALL_VIP_SKUS = listOf(
             BazaarConfig.SKU_VIP_MONTHLY,
             BazaarConfig.SKU_VIP_QUARTERLY,
@@ -37,15 +31,13 @@ class BazaarBillingManager(private val context: Context) {
     private val scope = CoroutineScope(Dispatchers.Main)
     private var isConnected = false
 
-    /**
-     * اتصال به سرویس کافه‌بازار
-     */
     fun connect(
         onConnected: () -> Unit = {},
         onDisconnected: () -> Unit = {},
         onFailed: (Throwable) -> Unit = {}
     ) {
         try {
+            // نام‌گذاری صحیح پارامترها طبق مستندات Poolakey
             val config = PaymentConfiguration(
                 localSecurityCheck = SecurityCheck.Disable,
                 remoteSecurityCheck = SecurityCheck.Enable(BazaarConfig.RSA_PUBLIC_KEY)
@@ -54,34 +46,29 @@ class BazaarBillingManager(private val context: Context) {
             payment = Payment(context, config)
             connection = payment?.connect()
 
+            // تغییر نام متد از connectionState() به connectionState (طبق مستندات)
             connection?.connectionState()?.observeForever { state ->
                 when (state) {
                     is ConnectionState.Connected -> {
-                        Log.d(TAG, "Connected to Bazaar")
                         isConnected = true
                         onConnected()
                     }
                     is ConnectionState.Disconnected -> {
-                        Log.d(TAG, "Disconnected from Bazaar")
                         isConnected = false
                         onDisconnected()
                     }
+                    // طبق مستندات، کلاس خطا ConnectionState.Failed است
                     is ConnectionState.Failed -> {
-                        Log.e(TAG, "Connection failed: ${state.throwable.message}")
                         isConnected = false
                         onFailed(state.throwable)
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Connection exception: ${e.message}")
             onFailed(e)
         }
     }
 
-    /**
-     * قطع اتصال
-     */
     fun disconnect() {
         try {
             connection?.disconnect()
@@ -91,9 +78,6 @@ class BazaarBillingManager(private val context: Context) {
         }
     }
 
-    /**
-     * خرید محصول VIP
-     */
     fun purchase(
         activity: Activity,
         sku: String,
@@ -113,64 +97,25 @@ class BazaarBillingManager(private val context: Context) {
                     payload = "studio_taraneh_vip"
                 )
 
-                val result = payment?.purchaseProduct(activity, request)
-
-                result?.fold(
-                    onSuccess = { purchaseInfo ->
-                        Log.d(TAG, "Purchase successful: ${purchaseInfo.orderId}")
-                        verifyPurchase(sku, onSuccess, onFailed)
-                    },
-                    onFailure = { throwable ->
-                        Log.e(TAG, "Purchase failed: ${throwable.message}")
-                        if (throwable.message?.contains("cancel", ignoreCase = true) == true) {
-                            onCanceled()
-                        } else {
-                            onFailed(throwable)
-                        }
-                    },
-                    onCanceled = {
-                        Log.d(TAG, "Purchase canceled by user")
-                        onCanceled()
-                    }
-                )
+                // در Poolakey، متد purchaseProduct به صورت مستقیم نتیجه را برمی‌گرداند
+                // و نیازی به fold ندارد. برای مدیریت خطا از try/catch استفاده می‌کنیم.
+                val purchaseInfo = payment?.purchaseProduct(activity, request)
+                if (purchaseInfo != null) {
+                    onSuccess(purchaseInfo)
+                } else {
+                    onFailed(Exception("Purchase failed or canceled"))
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Purchase exception: ${e.message}")
-                onFailed(e)
+                // اگر خطا مربوط به لغو توسط کاربر باشد
+                if (e.message?.contains("cancel", ignoreCase = true) == true) {
+                    onCanceled()
+                } else {
+                    onFailed(e)
+                }
             }
         }
     }
 
-    /**
-     * بررسی اعتبار خرید
-     */
-    private fun verifyPurchase(
-        sku: String,
-        onSuccess: (PurchaseInfo) -> Unit,
-        onFailed: (Throwable) -> Unit
-    ) {
-        scope.launch {
-            try {
-                val result = payment?.getPurchasedProducts()
-                result?.fold(
-                    onSuccess = { purchasedProducts ->
-                        val isPurchased = purchasedProducts.any { it.productId == sku }
-                        if (isPurchased) {
-                            onSuccess(purchasedProducts.first { it.productId == sku })
-                        } else {
-                            onFailed(Exception("Purchase not verified"))
-                        }
-                    },
-                    onFailure = { onFailed(it) }
-                )
-            } catch (e: Exception) {
-                onFailed(e)
-            }
-        }
-    }
-
-    /**
-     * بازیابی خریدهای قبلی (Restore Purchase)
-     */
     fun restorePurchases(
         onRestored: (List<PurchaseInfo>) -> Unit,
         onFailed: (Throwable) -> Unit
@@ -182,49 +127,33 @@ class BazaarBillingManager(private val context: Context) {
 
         scope.launch {
             try {
-                val result = payment?.getPurchasedProducts()
-                result?.fold(
-                    onSuccess = { purchases ->
-                        Log.d(TAG, "Restored ${purchases.size} purchases")
-                        onRestored(purchases)
-                    },
-                    onFailure = { onFailed(it) }
-                )
+                val purchases = payment?.getPurchasedProducts()
+                if (purchases != null) {
+                    onRestored(purchases)
+                } else {
+                    onFailed(Exception("Failed to get purchases"))
+                }
             } catch (e: Exception) {
                 onFailed(e)
             }
         }
     }
 
-    /**
-     * بررسی وضعیت VIP
-     */
-    fun checkVipStatus(
-        onResult: (Boolean) -> Unit
-    ) {
+    fun checkVipStatus(onResult: (Boolean) -> Unit) {
         if (!isConnected) {
             onResult(false)
             return
         }
-
         scope.launch {
             try {
-                val result = payment?.getPurchasedProducts()
-                result?.fold(
-                    onSuccess = { purchases ->
-                        val isVip = purchases.any { it.productId in ALL_VIP_SKUS }
-                        onResult(isVip)
-                    },
-                    onFailure = { onResult(false) }
-                )
+                val purchases = payment?.getPurchasedProducts()
+                val isVip = purchases?.any { it.productId in ALL_VIP_SKUS } ?: false
+                onResult(isVip)
             } catch (e: Exception) {
                 onResult(false)
             }
         }
     }
 
-    /**
-     * بررسی اتصال
-     */
     fun isConnected(): Boolean = isConnected
 }
