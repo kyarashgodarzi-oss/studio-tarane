@@ -43,11 +43,18 @@ jobs:
           printf 'TAPSELL_REWARDED_ZONE=6abaebb00a772b2b3f29c16b\n' >> .env
           printf 'TAPSELL_STANDARD_BANNER_ZONE=6abaec923c315037c8c55b1c\n' >> .env
 
-      - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace
+      - name: Build debug APK and AAB
+        run: |
+          gradle :app:assembleDebug :app:bundleDebug --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: studio-tarane-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload debug AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-tarane-debug-aab
+          path: app/build/outputs/bundle/debug/*.aab
