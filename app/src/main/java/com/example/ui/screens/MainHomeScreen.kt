@@ -60,6 +60,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.example.R
 import com.example.ui.MainViewModel
+import com.example.ads.TapsellNativeVideo
 import com.example.ui.localization.LocalStudioStrings
 
 data class HomeMenuItem(
@@ -273,6 +274,12 @@ fun MainHomeScreen(
                 StudioMenuCard(
                     item = item,
                     onClick = { onNavigate(item.id) }
+                )
+            }
+
+            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
+                TapsellNativeVideo(
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
                 )
             }
         }
