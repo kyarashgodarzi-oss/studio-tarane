@@ -232,10 +232,12 @@ fun StudioTaranehApp(
                     viewModel = viewModel,
                     mode = "FAVORITES",
                     onOpenSong = { songId ->
-                        viewModel.openSong(songId)
-                        navigateTo(Screen.SongEditor(songId))
+                        requestRewardedAccess("ویرایش ترانه") {
+                            viewModel.openSong(songId)
+                            navigateTo(Screen.SongEditor(songId))
+                        }
                     },
-                    onNewSong = { showNewSongDialog = true },
+                    onNewSong = { requestRewardedAccess("ایجاد ترانه جدید") { showNewSongDialog = true } },
                     onBack = { navigateBack() }
                 )
             }
@@ -244,10 +246,12 @@ fun StudioTaranehApp(
                     viewModel = viewModel,
                     mode = "RECENT",
                     onOpenSong = { songId ->
-                        viewModel.openSong(songId)
-                        navigateTo(Screen.SongEditor(songId))
+                        requestRewardedAccess("ویرایش ترانه") {
+                            viewModel.openSong(songId)
+                            navigateTo(Screen.SongEditor(songId))
+                        }
                     },
-                    onNewSong = { showNewSongDialog = true },
+                    onNewSong = { requestRewardedAccess("ایجاد ترانه جدید") { showNewSongDialog = true } },
                     onBack = { navigateBack() }
                 )
             }
