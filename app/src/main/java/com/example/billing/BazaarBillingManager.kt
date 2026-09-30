@@ -25,7 +25,11 @@ class BazaarBillingManager(
     private val payment = Payment(
         context = context.applicationContext,
         config = PaymentConfiguration(
-            localSecurityCheck = SecurityCheck.Enable(rsaPublicKey = BuildConfig.BAZAAR_RSA_PUBLIC_KEY),
+            localSecurityCheck = if (BuildConfig.DEBUG) {
+                SecurityCheck.Disable
+            } else {
+                SecurityCheck.Enable(rsaPublicKey = BuildConfig.BAZAAR_RSA_PUBLIC_KEY)
+            },
             shouldSupportSubscription = true
         )
     )
