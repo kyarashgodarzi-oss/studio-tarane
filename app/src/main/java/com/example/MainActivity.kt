@@ -1,6 +1,7 @@
 package com.example
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -153,6 +154,22 @@ fun StudioTaranehApp(
         screenStack = screenStack + currentScreen
         currentScreen = screen
     }
+    fun requestRewardedAccess(featureName: String, onGranted: () -> Unit) {
+        if (viewModel.preferences.isVip.value) {
+            onGranted()
+            return
+        }
+        TapsellAds.showRewarded(
+            activity = activity,
+            onRewarded = {
+                Toast.makeText(activity, "تبلیغ کامل شد؛ $featureName فعال شد", Toast.LENGTH_SHORT).show()
+                onGranted()
+            },
+            onError = { _ ->
+                Toast.makeText(activity, "برای استفاده از $featureName باید تبلیغ جایزه‌ای در دسترس باشد", Toast.LENGTH_LONG).show()
+            }
+        )
+    }
 
     fun navigateBack() {
         if (screenStack.isNotEmpty()) {
@@ -182,14 +199,14 @@ fun StudioTaranehApp(
                     viewModel = viewModel,
                     onNavigate = { route ->
                         when (route) {
-                            "my_songs" -> navigateTo(Screen.AllSongs)
-                            "new_song" -> showNewSongDialog = true
-                            "voice_recording" -> navigateTo(Screen.VoiceStudio)
-                            "rhythm_maker" -> navigateTo(Screen.RhythmMetronome)
-                            "favorites" -> navigateTo(Screen.FavoriteSongs)
-                            "recent" -> navigateTo(Screen.RecentSongs)
-                            "trash" -> navigateTo(Screen.Trash)
-                            "backup" -> navigateTo(Screen.Backup)
+                            "my_songs" -> requestRewardedAccess("ترانه‌های من") { navigateTo(Screen.AllSongs) }
+                            "new_song" -> requestRewardedAccess("ایجاد ترانه جدید") { showNewSongDialog = true }
+                            "voice_recording" -> requestRewardedAccess("استودیو ضبط صدا") { navigateTo(Screen.VoiceStudio) }
+                            "rhythm_maker" -> requestRewardedAccess("ساخت ریتم") { navigateTo(Screen.RhythmMetronome) }
+                            "favorites" -> requestRewardedAccess("ترانه‌های موردعلاقه") { navigateTo(Screen.FavoriteSongs) }
+                            "recent" -> requestRewardedAccess("ترانه‌های اخیر") { navigateTo(Screen.RecentSongs) }
+                            "trash" -> requestRewardedAccess("سطل زباله") { navigateTo(Screen.Trash) }
+                            "backup" -> requestRewardedAccess("پشتیبان‌گیری") { navigateTo(Screen.Backup) }
                             "vip" -> navigateTo(Screen.Vip)
                             "settings" -> navigateTo(Screen.Settings)
                         }
@@ -201,10 +218,12 @@ fun StudioTaranehApp(
                     viewModel = viewModel,
                     mode = "ALL",
                     onOpenSong = { songId ->
-                        viewModel.openSong(songId)
-                        navigateTo(Screen.SongEditor(songId))
+                        requestRewardedAccess("ویرایش ترانه") {
+                            viewModel.openSong(songId)
+                            navigateTo(Screen.SongEditor(songId))
+                        }
                     },
-                    onNewSong = { showNewSongDialog = true },
+                    onNewSong = { requestRewardedAccess("ایجاد ترانه جدید") { showNewSongDialog = true } },
                     onBack = { navigateBack() }
                 )
             }
