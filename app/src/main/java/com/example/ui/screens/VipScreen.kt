@@ -2,7 +2,6 @@ package com.example.ui.screens
 
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
