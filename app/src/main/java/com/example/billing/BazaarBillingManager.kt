@@ -5,9 +5,9 @@ import androidx.activity.ComponentActivity
 import com.example.BuildConfig
 import ir.cafebazaar.poolakey.Connection
 import ir.cafebazaar.poolakey.Payment
-import ir.cafebazaar.poolakey.PaymentConfiguration
-import ir.cafebazaar.poolakey.PurchaseRequest
-import ir.cafebazaar.poolakey.SecurityCheck
+import ir.cafebazaar.poolakey.config.PaymentConfiguration
+import ir.cafebazaar.poolakey.config.SecurityCheck
+import ir.cafebazaar.poolakey.request.PurchaseRequest
 
 class BazaarBillingManager(
     context: Context,
