@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.widget.Toast
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -54,6 +57,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
+import com.example.ads.TapsellAds
+import com.example.ads.TapsellBanner
 import com.example.ui.MainViewModel
 import com.example.ui.localization.LocalStudioStrings
 
@@ -72,6 +77,7 @@ fun MainHomeScreen(
     onNavigate: (screenRoute: String) -> Unit
 ) {
     val strings = LocalStudioStrings.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     val activeSongs by viewModel.activeSongs.collectAsState()
     val recordings by viewModel.voiceRecordings.collectAsState()
     val favorites by viewModel.favoriteSongs.collectAsState()
@@ -253,6 +259,24 @@ fun MainHomeScreen(
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )
 
+        if (!isVip) {
+            Button(
+                onClick = {
+                    val activity = context as? android.app.Activity
+                    if (activity == null) {
+                        Toast.makeText(context, "امکان نمایش تبلیغ وجود ندارد", Toast.LENGTH_SHORT).show()
+                    } else {
+                        TapsellAds.showRewarded(
+                            activity,
+                            onRewarded = { Toast.makeText(context, "پاداش تبلیغ با موفقیت ثبت شد", Toast.LENGTH_SHORT).show() },
+                            onError = { Toast.makeText(context, "نمایش تبلیغ ناموفق بود", Toast.LENGTH_SHORT).show() }
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
+            ) { Text("🎁 تماشای تبلیغ جایزه‌ای") }
+        }
+
         // 2-Column Clean Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -269,6 +293,10 @@ fun MainHomeScreen(
                     onClick = { onNavigate(item.id) }
                 )
             }
+        }
+
+        if (!isVip) {
+            TapsellBanner(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
         }
     }
 }

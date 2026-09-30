@@ -1,8 +1,7 @@
 package com.example.ui.screens
 
-import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.billing.BazaarBillingManager
 import com.example.ui.MainViewModel
 import com.example.ui.localization.LocalStudioStrings
 
@@ -74,15 +75,24 @@ fun VipScreen(
     val strings = LocalStudioStrings.current
     val context = LocalContext.current
     val isVip by viewModel.preferences.isVip.collectAsState()
+    val activity = context as? ComponentActivity
+    var billingMessage by remember { mutableStateOf<String?>(null) }
+    val billingManager = remember(activity) {
+        activity?.let { a -> BazaarBillingManager(a, { vip -> viewModel.preferences.setVip(vip) }, { billingMessage = it }) }
+    }
+    DisposableEffect(billingManager) {
+        billingManager?.connect()
+        onDispose { billingManager?.disconnect() }
+    }
 
     val plans = listOf(
-        VipPlan("plan_month_1", "1 Month", "1 Month Access", "49,000 Toman"),
-        VipPlan("plan_month_3", "3 Months (Popular)", "3 Months Access", "119,000 Toman", "20% OFF"),
-        VipPlan("plan_year_1", "1 Year Gold", "12 Months Full Pro", "290,000 Toman", "40% OFF"),
-        VipPlan("plan_lifetime", "Lifetime Access", "Permanent Access", "490,000 Toman", "VIP")
+        VipPlan(BazaarBillingManager.MONTHLY, "۱ ماهه", "۳۰ روز", "۴۹۰٬۰۰۰ ریال"),
+        VipPlan(BazaarBillingManager.THREE_MONTHS, "۳ ماهه", "۹۰ روز", "۱٬۱۹۰٬۰۰۰ ریال", "محبوب"),
+        VipPlan(BazaarBillingManager.YEARLY, "۱ ساله", "۳۶۵ روز", "۲٬۹۰۰٬۰۰۰ ریال", "ویژه"),
+        VipPlan(BazaarBillingManager.LIFETIME, "مادام‌العمر", "بدون انقضا", "۴٬۹۰۰٬۰۰۰ ریال", "VIP")
     )
 
-    var selectedPlanId by remember { mutableStateOf("plan_month_3") }
+    var selectedPlanId by remember { mutableStateOf(BazaarBillingManager.THREE_MONTHS) }
 
     val vipFeatures = listOf(
         strings.tapsellVipRemoved,
@@ -94,20 +104,17 @@ fun VipScreen(
         strings.vipHubSubtitle
     )
 
-    fun launchBazaarPurchase(planId: String) {
-        try {
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("bazaar://details?id=${context.packageName}")
-                setPackage("com.farsitel.bazaar")
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-            try {
-                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://cafebazaar.ir/app/${context.packageName}"))
-                context.startActivity(webIntent)
-            } catch (_: Exception) {
-                Toast.makeText(context, strings.appName, Toast.LENGTH_SHORT).show()
-            }
+    fun buySelectedPlan() {
+        val manager = billingManager
+        val currentActivity = activity
+        if (manager == null || currentActivity == null) {
+            Toast.makeText(context, "اتصال به کافه‌بازار آماده نیست", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (selectedPlanId == BazaarBillingManager.LIFETIME) {
+            manager.purchase(currentActivity, selectedPlanId)
+        } else {
+            manager.subscribe(currentActivity, selectedPlanId)
         }
     }
 
@@ -330,7 +337,7 @@ fun VipScreen(
         // Bazaar Purchase Button
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Button(
-                onClick = { launchBazaarPurchase(selectedPlanId) },
+                onClick = { buySelectedPlan() },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
@@ -350,7 +357,8 @@ fun VipScreen(
             // Restore Purchases
             OutlinedButton(
                 onClick = {
-                    Toast.makeText(context, strings.restorePurchase, Toast.LENGTH_SHORT).show()
+                    billingManager?.restorePurchases()
+                        ?: Toast.makeText(context, "اتصال به کافه‌بازار آماده نیست", Toast.LENGTH_SHORT).show()
                 },
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -359,6 +367,11 @@ fun VipScreen(
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(strings.restorePurchase)
             }
+        }
+
+        billingMessage?.let { message ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(message, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
         }
 
         Spacer(modifier = Modifier.height(30.dp))

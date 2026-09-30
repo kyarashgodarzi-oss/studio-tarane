@@ -3,246 +3,80 @@ package com.example.ads
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import ir.tapsell.plus.AdRequestCallback
 import ir.tapsell.plus.AdShowListener
 import ir.tapsell.plus.TapsellPlus
 import ir.tapsell.plus.TapsellPlusBannerType
 import ir.tapsell.plus.TapsellPlusInitListener
+import ir.tapsell.plus.model.AdNetworkError
+import ir.tapsell.plus.model.AdNetworks
 import ir.tapsell.plus.model.TapsellPlusAdModel
 import ir.tapsell.plus.model.TapsellPlusErrorModel
 
-class TapsellManager private constructor() {
-
-    companion object {
-        private const val TAG = "TapsellManager"
-
-        @Volatile
-        private var instance: TapsellManager? = null
-
-        fun getInstance(): TapsellManager {
-            return instance ?: synchronized(this) {
-                instance ?: TapsellManager().also { instance = it }
-            }
-        }
-    }
-
-    private var isInitialized = false
-    private var lastInterstitialTime = 0L
-
+object TapsellAds {
+    private const val TAG = "TapsellAds"
     fun initialize(context: Context) {
-        if (isInitialized) return
-        try {
-            TapsellPlus.initialize(
-                context,
-                TapsellConfig.APP_ID,
-                object : TapsellPlusInitListener() {
-                    override fun onInitializeSuccess() {
-                        isInitialized = true
-                        Log.d(TAG, "Tapsell initialized successfully")
-                    }
-
-                    override fun onInitializeFailed(adNetworks: ir.tapsell.plus.model.TapsellPlusAdNetwork?, error: ir.tapsell.plus.model.TapsellPlusErrorModel?) {
-                        Log.e(TAG, "Tapsell init failed")
-                    }
+        TapsellPlus.initialize(context.applicationContext, TapsellConfig.APP_ID,
+            object : TapsellPlusInitListener {
+                override fun onInitializeSuccess(adNetworks: AdNetworks) {
+                    Log.d(TAG, "Tapsell initialized: ${adNetworks.name}")
                 }
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Tapsell init exception: ${e.message}")
-        }
+                override fun onInitializeFailed(adNetworks: AdNetworks, adNetworkError: AdNetworkError) {
+                    Log.e(TAG, "Tapsell init failed: ${adNetworks.name} / ${adNetworkError.errorMessage}")
+                }
+            })
+        TapsellPlus.setGDPRConsent(context.applicationContext, true)
     }
-
-    fun requestStandardBanner(
-        activity: Activity,
-        container: FrameLayout,
-        onFailed: () -> Unit = {}
-    ) {
-        if (!isInitialized) { onFailed(); return }
-        try {
-            TapsellPlus.requestStandardBannerAd(
-                activity,
-                TapsellConfig.ZONE_STANDARD_BANNER,
-                TapsellPlusBannerType.BANNER_320x50,
-                object : AdRequestCallback() {
-                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
-                        super.response(tapsellPlusAdModel)
-                        TapsellPlus.showStandardBannerAd(
-                            activity,
-                            tapsellPlusAdModel.responseId,
-                            container,
-                            object : AdShowListener() {
-                                override fun onError(error: TapsellPlusErrorModel?) {
-                                    onFailed()
-                                }
-                            }
-                        )
-                    }
-
-                    override fun error(message: String) {
-                        onFailed()
-                    }
+    fun showRewarded(activity: Activity, onRewarded: () -> Unit, onError: (String) -> Unit = {}) {
+        if (activity.isFinishing || activity.isDestroyed) return
+        TapsellPlus.requestRewardedVideoAd(activity, TapsellConfig.ZONE_REWARDED_VIDEO,
+            object : AdRequestCallback() {
+                override fun response(ad: TapsellPlusAdModel) {
+                    if (activity.isFinishing || activity.isDestroyed) return
+                    TapsellPlus.showRewardedVideoAd(activity, ad.responseId, object : AdShowListener() {
+                        override fun onRewarded(ad: TapsellPlusAdModel) { onRewarded() }
+                        override fun onError(error: TapsellPlusErrorModel) { onError(error.toString()) }
+                    })
                 }
-            )
-        } catch (e: Exception) {
-            onFailed()
-        }
+                override fun error(message: String) { onError(message) }
+            })
     }
-
-    fun showInterstitial(
-        activity: Activity,
-        forceShow: Boolean = false,
-        onClosed: () -> Unit = {}
-    ) {
-        if (!isInitialized) { onClosed(); return }
-        val now = System.currentTimeMillis() / 1000
-        if (!forceShow && (now - lastInterstitialTime) < TapsellConfig.INTERSTITIAL_COOLDOWN_SECONDS) {
-            onClosed()
-            return
-        }
-        try {
-            TapsellPlus.requestInterstitialAd(
-                activity,
-                TapsellConfig.ZONE_INTERSTITIAL_BANNER,
-                object : AdRequestCallback() {
-                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
-                        super.response(tapsellPlusAdModel)
-                        TapsellPlus.showInterstitialAd(
-                            activity,
-                            tapsellPlusAdModel.responseId,
-                            object : AdShowListener() {
-                                override fun onAdClosed(ad: TapsellPlusAdModel?) {
-                                    lastInterstitialTime = System.currentTimeMillis() / 1000
-                                    onClosed()
-                                }
-
-                                override fun onError(error: TapsellPlusErrorModel?) {
-                                    onClosed()
-                                }
-                            }
-                        )
-                    }
-
-                    override fun error(message: String) {
-                        onClosed()
-                    }
+    fun loadBanner(activity: Activity, container: ViewGroup) {
+        if (activity.isFinishing || activity.isDestroyed) return
+        TapsellPlus.requestStandardBannerAd(activity, TapsellConfig.ZONE_STANDARD_BANNER,
+            TapsellPlusBannerType.BANNER_320x50, object : AdRequestCallback() {
+                override fun response(ad: TapsellPlusAdModel) {
+                    if (activity.isFinishing || activity.isDestroyed) return
+                    TapsellPlus.showStandardBannerAd(activity, ad.responseId, container, object : AdShowListener() {
+                        override fun onError(error: TapsellPlusErrorModel) {
+                            Log.e(TAG, "Banner error: $error")
+                        }
+                    })
                 }
-            )
-        } catch (e: Exception) {
-            onClosed()
-        }
+                override fun error(message: String) { Log.e(TAG, "Banner request error: $message") }
+            })
     }
-
-    fun showRewardedVideo(
-        activity: Activity,
-        onRewarded: () -> Unit,
-        onClosed: () -> Unit = {}
-    ) {
-        if (!isInitialized) { onClosed(); return }
-        try {
-            TapsellPlus.requestRewardedVideoAd(
-                activity,
-                TapsellConfig.ZONE_REWARDED_VIDEO,
-                object : AdRequestCallback() {
-                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
-                        super.response(tapsellPlusAdModel)
-                        TapsellPlus.showRewardedVideoAd(
-                            activity,
-                            tapsellPlusAdModel.responseId,
-                            object : AdShowListener() {
-                                override fun onRewarded(ad: TapsellPlusAdModel?) {
-                                    onRewarded()
-                                }
-
-                                override fun onAdClosed(ad: TapsellPlusAdModel?) {
-                                    onClosed()
-                                }
-
-                                override fun onError(error: TapsellPlusErrorModel?) {
-                                    onClosed()
-                                }
-                            }
-                        )
-                    }
-
-                    override fun error(message: String) {
-                        onClosed()
-                    }
-                }
-            )
-        } catch (e: Exception) {
-            onClosed()
-        }
-    }
-
-    fun requestNativeVideo(
-        activity: Activity,
-        container: FrameLayout,
-        onFailed: () -> Unit = {}
-    ) {
-        if (!isInitialized) { onFailed(); return }
-        try {
-            TapsellPlus.requestNativeVideoAd(
-                activity,
-                TapsellConfig.ZONE_NATIVE_VIDEO,
-                object : AdRequestCallback() {
-                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
-                        super.response(tapsellPlusAdModel)
-                        TapsellPlus.showNativeVideoAd(
-                            activity,
-                            tapsellPlusAdModel.responseId,
-                            container,
-                            object : AdShowListener() {
-                                override fun onError(error: TapsellPlusErrorModel?) {
-                                    onFailed()
-                                }
-                            }
-                        )
-                    }
-
-                    override fun error(message: String) {
-                        onFailed()
-                    }
-                }
-            )
-        } catch (e: Exception) {
-            onFailed()
-        }
-    }
-
-    fun showPreRollVideo(
-        activity: Activity,
-        onCompleted: () -> Unit
-    ) {
-        if (!isInitialized) { onCompleted(); return }
-        try {
-            TapsellPlus.requestInterstitialAd(
-                activity,
-                TapsellConfig.ZONE_PRE_ROLL_VIDEO,
-                object : AdRequestCallback() {
-                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
-                        super.response(tapsellPlusAdModel)
-                        TapsellPlus.showInterstitialAd(
-                            activity,
-                            tapsellPlusAdModel.responseId,
-                            object : AdShowListener() {
-                                override fun onAdClosed(ad: TapsellPlusAdModel?) {
-                                    onCompleted()
-                                }
-
-                                override fun onError(error: TapsellPlusErrorModel?) {
-                                    onCompleted()
-                                }
-                            }
-                        )
-                    }
-
-                    override fun error(message: String) {
-                        onCompleted()
-                    }
-                }
-            )
-        } catch (e: Exception) {
-            onCompleted()
-        }
+}
+@Composable
+fun TapsellBanner(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val activity = context as? Activity ?: return
+    Box(modifier = modifier.fillMaxWidth().height(60.dp)) {
+        AndroidView(modifier = Modifier.fillMaxWidth(), factory = {
+            FrameLayout(context).also { container ->
+                container.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                TapsellAds.loadBanner(activity, container)
+            }
+        })
     }
 }
