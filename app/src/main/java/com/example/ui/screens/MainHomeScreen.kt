@@ -48,12 +48,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.Activity
+import android.widget.Toast
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import com.example.R
+import com.example.ads.TapsellAds
+import com.example.ads.TapsellBanner
 import com.example.ui.MainViewModel
 import com.example.ui.localization.LocalStudioStrings
 
@@ -77,6 +84,8 @@ fun MainHomeScreen(
     val favorites by viewModel.favoriteSongs.collectAsState()
     val trashSongs by viewModel.trashSongs.collectAsState()
     val isVip by viewModel.preferences.isVip.collectAsState()
+    val context = LocalContext.current
+    val activity = context as? Activity
 
     val menuItems = listOf(
         HomeMenuItem(
@@ -260,7 +269,7 @@ fun MainHomeScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .testTag("main_menu_grid")
         ) {
             items(menuItems) { item ->
@@ -268,6 +277,35 @@ fun MainHomeScreen(
                     item = item,
                     onClick = { onNavigate(item.id) }
                 )
+            }
+        }
+
+        if (!isVip && activity != null) {
+            TapsellBanner(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+            Button(
+                onClick = {
+                    TapsellAds.showRewarded(
+                        activity = activity,
+                        onRewarded = {
+                            Toast.makeText(context, "تبلیغ با موفقیت دیده شد", Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { message ->
+                            Toast.makeText(context, "تبلیغ در دسترس نیست: $message", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("تماشای تبلیغ")
             }
         }
     }
