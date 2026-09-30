@@ -3,7 +3,6 @@ package com.example.ads
 import android.app.Activity
 import android.content.Context
 import android.util.Log
-import android.view.ViewGroup
 import android.widget.FrameLayout
 import ir.tapsell.plus.AdRequestCallback
 import ir.tapsell.plus.AdShowListener
@@ -11,6 +10,8 @@ import ir.tapsell.plus.TapsellPlus
 import ir.tapsell.plus.TapsellPlusBannerType
 import ir.tapsell.plus.model.TapsellPlusAdModel
 import ir.tapsell.plus.model.TapsellPlusErrorModel
+// برای تبلیغات Native باید از این کلاس استفاده کرد
+import ir.tapsell.plus.TapsellPlusNativeBannerAd
 
 class TapsellManager private constructor() {
 
@@ -33,14 +34,19 @@ class TapsellManager private constructor() {
     fun initialize(context: Context) {
         if (isInitialized) return
         try {
+            // بر اساس مستندات، متد initialize نیاز به context و APP_ID دارد [citation:5][citation:18]
             TapsellPlus.initialize(context, TapsellConfig.APP_ID)
             isInitialized = true
-            Log.d(TAG, "Tapsell initialized")
+            Log.d(TAG, "Tapsell initialized successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Tapsell init failed: ${e.message}")
         }
     }
 
+    /**
+     * بنر استاندارد (Standard Banner)
+     * بر اساس مستندات، ابتدا درخواست می‌شود و سپس نمایش داده می‌شود [citation:9]
+     */
     fun requestStandardBanner(
         activity: Activity,
         container: FrameLayout,
@@ -53,29 +59,38 @@ class TapsellManager private constructor() {
                 TapsellConfig.ZONE_STANDARD_BANNER,
                 TapsellPlusBannerType.BANNER_320x50,
                 object : AdRequestCallback() {
-                    override fun response(adModel: TapsellPlusAdModel) {
-                        super.response(adModel)
+                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
+                        super.response(tapsellPlusAdModel)
                         TapsellPlus.showStandardBannerAd(
                             activity,
-                            adModel.responseId,
+                            tapsellPlusAdModel.responseId,
                             container,
                             object : AdShowListener() {
+                                // در کلاس AdShowListener متد خطا به صورت `error(message: String)` است
                                 override fun onError(error: TapsellPlusErrorModel?) {
                                     onFailed()
                                 }
                             }
                         )
                     }
-                    override fun error(error: TapsellPlusErrorModel?) {
+
+                    // در کلاس AdRequestCallback متد خطا به صورت `error(message: String)` است
+                    override fun error(message: String) {
+                        Log.e(TAG, "Banner request error: $message")
                         onFailed()
                     }
                 }
             )
         } catch (e: Exception) {
+            Log.e(TAG, "Banner request exception: ${e.message}")
             onFailed()
         }
     }
 
+    /**
+     * بنر آنی (Interstitial Banner)
+     * برای جلوگیری از مزاحمت، بین هر نمایش یک فاصله زمانی در نظر گرفته شده است.
+     */
     fun showInterstitial(
         activity: Activity,
         forceShow: Boolean = false,
@@ -92,23 +107,25 @@ class TapsellManager private constructor() {
                 activity,
                 TapsellConfig.ZONE_INTERSTITIAL_BANNER,
                 object : AdRequestCallback() {
-                    override fun response(adModel: TapsellPlusAdModel) {
-                        super.response(adModel)
+                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
+                        super.response(tapsellPlusAdModel)
                         TapsellPlus.showInterstitialAd(
                             activity,
-                            adModel.responseId,
+                            tapsellPlusAdModel.responseId,
                             object : AdShowListener() {
                                 override fun onAdClosed(ad: TapsellPlusAdModel?) {
                                     lastInterstitialTime = System.currentTimeMillis() / 1000
                                     onClosed()
                                 }
+
                                 override fun onError(error: TapsellPlusErrorModel?) {
                                     onClosed()
                                 }
                             }
                         )
                     }
-                    override fun error(error: TapsellPlusErrorModel?) {
+
+                    override fun error(message: String) {
                         onClosed()
                     }
                 }
@@ -118,6 +135,9 @@ class TapsellManager private constructor() {
         }
     }
 
+    /**
+     * ویدیو جایزه‌ای (Rewarded Video)
+     */
     fun showRewardedVideo(
         activity: Activity,
         onRewarded: () -> Unit,
@@ -129,25 +149,28 @@ class TapsellManager private constructor() {
                 activity,
                 TapsellConfig.ZONE_REWARDED_VIDEO,
                 object : AdRequestCallback() {
-                    override fun response(adModel: TapsellPlusAdModel) {
-                        super.response(adModel)
+                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
+                        super.response(tapsellPlusAdModel)
                         TapsellPlus.showRewardedVideoAd(
                             activity,
-                            adModel.responseId,
+                            tapsellPlusAdModel.responseId,
                             object : AdShowListener() {
                                 override fun onRewarded(ad: TapsellPlusAdModel?) {
                                     onRewarded()
                                 }
+
                                 override fun onAdClosed(ad: TapsellPlusAdModel?) {
                                     onClosed()
                                 }
+
                                 override fun onError(error: TapsellPlusErrorModel?) {
                                     onClosed()
                                 }
                             }
                         )
                     }
-                    override fun error(error: TapsellPlusErrorModel?) {
+
+                    override fun error(message: String) {
                         onClosed()
                     }
                 }
@@ -157,9 +180,13 @@ class TapsellManager private constructor() {
         }
     }
 
+    /**
+     * ویدیو همسان (Native Video)
+     * نام صحیح متد و کلاس طبق مستندات تپسل [citation:12]
+     */
     fun requestNativeVideo(
         activity: Activity,
-        container: ViewGroup,
+        container: FrameLayout,
         onFailed: () -> Unit = {}
     ) {
         if (!isInitialized) { onFailed(); return }
@@ -168,11 +195,11 @@ class TapsellManager private constructor() {
                 activity,
                 TapsellConfig.ZONE_NATIVE_VIDEO,
                 object : AdRequestCallback() {
-                    override fun response(adModel: TapsellPlusAdModel) {
-                        super.response(adModel)
+                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
+                        super.response(tapsellPlusAdModel)
                         TapsellPlus.showNativeVideoAd(
                             activity,
-                            adModel.responseId,
+                            tapsellPlusAdModel.responseId,
                             container,
                             object : AdShowListener() {
                                 override fun onError(error: TapsellPlusErrorModel?) {
@@ -181,7 +208,8 @@ class TapsellManager private constructor() {
                             }
                         )
                     }
-                    override fun error(error: TapsellPlusErrorModel?) {
+
+                    override fun error(message: String) {
                         onFailed()
                     }
                 }
@@ -191,6 +219,10 @@ class TapsellManager private constructor() {
         }
     }
 
+    /**
+     * ویدیو پیش‌نمایشی (Pre-roll Video)
+     * در تپسل پلاس، این نوع تبلیغ با متد Interstitial درخواست می‌شود.
+     */
     fun showPreRollVideo(
         activity: Activity,
         onCompleted: () -> Unit
@@ -201,22 +233,24 @@ class TapsellManager private constructor() {
                 activity,
                 TapsellConfig.ZONE_PRE_ROLL_VIDEO,
                 object : AdRequestCallback() {
-                    override fun response(adModel: TapsellPlusAdModel) {
-                        super.response(adModel)
+                    override fun response(tapsellPlusAdModel: TapsellPlusAdModel) {
+                        super.response(tapsellPlusAdModel)
                         TapsellPlus.showInterstitialAd(
                             activity,
-                            adModel.responseId,
+                            tapsellPlusAdModel.responseId,
                             object : AdShowListener() {
                                 override fun onAdClosed(ad: TapsellPlusAdModel?) {
                                     onCompleted()
                                 }
+
                                 override fun onError(error: TapsellPlusErrorModel?) {
                                     onCompleted()
                                 }
                             }
                         )
                     }
-                    override fun error(error: TapsellPlusErrorModel?) {
+
+                    override fun error(message: String) {
                         onCompleted()
                     }
                 }
