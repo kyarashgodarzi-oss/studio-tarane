@@ -262,6 +262,30 @@ fun MainHomeScreen(
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )
 
+        if (!isVip && activity != null) {
+            Button(
+                onClick = {
+                    TapsellAds.showRewarded(
+                        activity = activity,
+                        onRewarded = {
+                            Toast.makeText(context, "تبلیغ با موفقیت دیده شد", Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { message ->
+                            Toast.makeText(context, "تبلیغ در دسترس نیست: $message", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("تماشای تبلیغ جایزه‌ای")
+            }
+        }
+
         // 2-Column Clean Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -286,27 +310,6 @@ fun MainHomeScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp)
             )
-            Button(
-                onClick = {
-                    TapsellAds.showRewarded(
-                        activity = activity,
-                        onRewarded = {
-                            Toast.makeText(context, "تبلیغ با موفقیت دیده شد", Toast.LENGTH_SHORT).show()
-                        },
-                        onError = { message ->
-                            Toast.makeText(context, "تبلیغ در دسترس نیست: $message", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text("تماشای تبلیغ")
-            }
         }
     }
 }
