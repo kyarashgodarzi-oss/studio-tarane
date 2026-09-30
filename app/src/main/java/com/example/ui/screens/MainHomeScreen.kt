@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.app.Activity
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -283,6 +284,19 @@ fun MainHomeScreen(
                 )
             ) {
                 Text("تماشای تبلیغ جایزه‌ای")
+            }
+        }
+
+        if (!isVip && activity != null) {
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, com.example.ads.AdsShowcaseActivity::class.java))
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                Text("نمایش سایر تبلیغات")
             }
         }
 
