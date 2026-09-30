@@ -1,5 +1,7 @@
 package com.example
 
+import com.example.ads.TapsellAds
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -79,6 +81,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        TapsellAds.initialize(this)
         java.util.Locale.setDefault(java.util.Locale("fa", "IR"))
         enableEdgeToEdge()
         setContent {
