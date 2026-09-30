@@ -1,148 +1,109 @@
 package com.example.billing
 
-import android.app.Activity
 import android.content.Context
-import android.util.Log
+import androidx.activity.ComponentActivity
+import com.example.BuildConfig
 import ir.cafebazaar.poolakey.Connection
-import ir.cafebazaar.poolakey.ConnectionState
 import ir.cafebazaar.poolakey.Payment
 import ir.cafebazaar.poolakey.config.PaymentConfiguration
 import ir.cafebazaar.poolakey.config.SecurityCheck
-import ir.cafebazaar.poolakey.entity.PurchaseInfo
 import ir.cafebazaar.poolakey.request.PurchaseRequest
 
-class BazaarBillingManager(private val context: Context) {
-
+class BazaarBillingManager(
+    context: Context,
+    private val onVipChanged: (Boolean) -> Unit,
+    private val onMessage: (String) -> Unit
+) {
     companion object {
-        private const val TAG = "BazaarBilling"
-        val ALL_VIP_SKUS = listOf(
-            BazaarConfig.SKU_VIP_MONTHLY,
-            BazaarConfig.SKU_VIP_QUARTERLY,
-            BazaarConfig.SKU_VIP_YEARLY,
-            BazaarConfig.SKU_VIP_LIFETIME
-        )
+        const val MONTHLY = "vip_monthly"
+        const val THREE_MONTHS = "vip_3months"
+        const val YEARLY = "vip_yearly"
+        const val LIFETIME = "vip_lifetime"
+        private val SUBSCRIPTION_IDS = setOf(MONTHLY, THREE_MONTHS, YEARLY)
     }
 
-    private var payment: Payment? = null
-    private var paymentConnection: Connection? = null
+    private val payment = Payment(
+        context = context.applicationContext,
+        config = PaymentConfiguration(
+            localSecurityCheck = SecurityCheck.Enable(rsaPublicKey = BuildConfig.BAZAAR_RSA_PUBLIC_KEY),
+            shouldSupportSubscription = true
+        )
+    )
+    private var connection: Connection? = null
 
-    fun connect(
-        onConnected: () -> Unit = {},
-        onDisconnected: () -> Unit = {},
-        onFailed: (Throwable) -> Unit = {}
-    ) {
-        try {
-            // طبق مستندات، PaymentConfiguration فقط localSecurityCheck می‌گیرد
-            val securityCheck = SecurityCheck.Enable(rsaPublicKey = BazaarConfig.RSA_PUBLIC_KEY)
-            val paymentConfig = PaymentConfiguration(localSecurityCheck = securityCheck)
-            
-            payment = Payment(context = context, config = paymentConfig)
-            
-            // طبق مستندات Poolakey، اتصال از طریق متد connect با کالبک‌ها انجام می‌شود
-            paymentConnection = payment?.connect {
-                connectionSucceed {
-                    Log.d(TAG, "Connected to Bazaar")
-                    onConnected()
-                }
-                
-                connectionFailed { throwable ->
-                    Log.e(TAG, "Connection failed: ${throwable.message}")
-                    onFailed(throwable)
-                }
-                
-                disconnected {
-                    Log.d(TAG, "Disconnected from Bazaar")
-                    onDisconnected()
-                }
+    fun connect() {
+        if (connection != null) return
+        connection = payment.connect {
+            connectionSucceed {
+                onMessage("اتصال به کافه‌بازار برقرار شد")
+                restorePurchases()
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Connection exception: ${e.message}")
-            onFailed(e)
+            connectionFailed { error ->
+                onMessage("اتصال به کافه‌بازار ناموفق بود: " + (error.message ?: "خطای نامشخص"))
+            }
+            disconnected { connection = null }
         }
     }
 
     fun disconnect() {
-        try {
-            paymentConnection?.disconnect()
-        } catch (e: Exception) {
-            Log.e(TAG, "Disconnect error: ${e.message}")
-        }
+        connection?.disconnect()
+        connection = null
     }
 
-    fun purchase(
-        activity: Activity,
-        sku: String,
-        onSuccess: (PurchaseInfo) -> Unit,
-        onFailed: (Throwable) -> Unit,
-        onCanceled: () -> Unit = {}
-    ) {
-        try {
-            val request = PurchaseRequest(
-                productId = sku,
-                payload = "studio_taraneh_vip"
-            )
-            
-            val result = payment?.purchaseProduct(activity, request)
-            result?.fold(
-                onSuccess = { purchaseInfo ->
-                    Log.d(TAG, "Purchase successful: ${purchaseInfo.orderId}")
-                    onSuccess(purchaseInfo)
-                },
-                onFailure = { throwable ->
-                    Log.e(TAG, "Purchase failed: ${throwable.message}")
-                    onFailed(throwable)
-                },
-                onCanceled = {
-                    Log.d(TAG, "Purchase canceled by user")
-                    onCanceled()
+    fun purchase(activity: ComponentActivity, productId: String) {
+        payment.purchaseProduct(
+            registry = activity.activityResultRegistry,
+            request = PurchaseRequest(productId = productId, payload = "studio_taraneh_vip")
+        ) {
+            purchaseSucceed { info ->
+                if (info.productId == LIFETIME) {
+                    onVipChanged(true)
+                    onMessage("VIP مادام‌العمر فعال شد")
                 }
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Purchase exception: ${e.message}")
-            onFailed(e)
+            }
+            purchaseCanceled { onMessage("خرید لغو شد") }
+            purchaseFailed { error -> onMessage("خرید ناموفق بود: " + (error.message ?: "خطای نامشخص")) }
+            failedToBeginFlow { error -> onMessage("شروع پرداخت ناموفق بود: " + (error.message ?: "خطای نامشخص")) }
         }
     }
 
-    fun restorePurchases(
-        onRestored: (List<PurchaseInfo>) -> Unit,
-        onFailed: (Throwable) -> Unit
-    ) {
-        try {
-            val result = payment?.getPurchasedProducts()
-            result?.fold(
-                onSuccess = { purchases ->
-                    Log.d(TAG, "Restored ${purchases.size} purchases")
-                    onRestored(purchases)
-                },
-                onFailure = { throwable ->
-                    Log.e(TAG, "Restore failed: ${throwable.message}")
-                    onFailed(throwable)
+    fun subscribe(activity: ComponentActivity, productId: String) {
+        payment.subscribeProduct(
+            registry = activity.activityResultRegistry,
+            request = PurchaseRequest(productId = productId, payload = "studio_taraneh_vip")
+        ) {
+            purchaseSucceed { info ->
+                if (info.productId in SUBSCRIPTION_IDS) {
+                    onVipChanged(true)
+                    onMessage("اشتراک VIP فعال شد")
                 }
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Restore exception: ${e.message}")
-            onFailed(e)
+            }
+            purchaseCanceled { onMessage("خرید اشتراک لغو شد") }
+            purchaseFailed { error -> onMessage("خرید اشتراک ناموفق بود: " + (error.message ?: "خطای نامشخص")) }
+            failedToBeginFlow { error -> onMessage("شروع پرداخت اشتراک ناموفق بود: " + (error.message ?: "خطای نامشخص")) }
         }
     }
 
-    fun checkVipStatus(onResult: (Boolean) -> Unit) {
-        try {
-            val result = payment?.getPurchasedProducts()
-            result?.fold(
-                onSuccess = { purchases ->
-                    val isVip = purchases.any { it.productId in ALL_VIP_SKUS }
-                    onResult(isVip)
-                },
-                onFailure = {
-                    onResult(false)
-                }
-            )
-        } catch (e: Exception) {
-            onResult(false)
+    fun restorePurchases() {
+        payment.getPurchasedProducts {
+            querySucceed { purchases ->
+                if (purchases.any { it.productId == LIFETIME }) {
+                    onVipChanged(true)
+                    onMessage("خرید VIP مادام‌العمر بازیابی شد")
+                } else querySubscriptions()
+            }
+            queryFailed { error -> onMessage("بازیابی خریدها ناموفق بود: " + (error.message ?: "خطای نامشخص")) }
         }
     }
 
-    fun isConnected(): Boolean {
-        return paymentConnection?.getState() == ConnectionState.Connected
+    private fun querySubscriptions() {
+        payment.getSubscribedProducts {
+            querySucceed { subscriptions ->
+                val active = subscriptions.any { it.productId in SUBSCRIPTION_IDS }
+                onVipChanged(active)
+                if (active) onMessage("اشتراک VIP بازیابی شد")
+            }
+            queryFailed { error -> onMessage("بازیابی اشتراک ناموفق بود: " + (error.message ?: "خطای نامشخص")) }
+        }
     }
 }
