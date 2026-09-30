@@ -181,6 +181,13 @@ fun StudioTaranehApp(
         }
     }
 
+    fun navigateBackWithInterstitial() {
+        navigateBack()
+        if (!viewModel.preferences.isVip.value) {
+            TapsellAds.showInterstitial(activity)
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -259,7 +266,7 @@ fun StudioTaranehApp(
                 SongEditorScreen(
                     viewModel = viewModel,
                     songId = screen.songId,
-                    onBack = { navigateBack() }
+                    onBack = { navigateBackWithInterstitial() }
                 )
             }
             is Screen.VoiceStudio -> {
