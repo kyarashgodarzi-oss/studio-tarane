@@ -17,7 +17,6 @@ import androidx.media3.ui.PlayerView
 import com.google.ads.interactivemedia.v3.api.AdErrorEvent
 import com.google.ads.interactivemedia.v3.api.AdEvent
 import ir.tapsell.plus.TapsellPlus
-import ir.tapsell.plus.TapsellPlusVideoAdHolder
 import ir.tapsell.plus.VastRequestListener
 import ir.tapsell.sdk.preroll.TapsellPrerollAd
 import ir.tapsell.sdk.preroll.ima.ImaAdsLoader
@@ -27,8 +26,6 @@ class AdsShowcaseActivity : ComponentActivity() {
     private val sampleVideoUrl =
         "https://storage.backtory.com/tapsell-server/sdk/VASTContentVideo.mp4"
 
-    private lateinit var nativeContainer: FrameLayout
-    private lateinit var prerollContainer: FrameLayout
     private lateinit var playerView: PlayerView
     private lateinit var adUiContainer: FrameLayout
     private lateinit var companionContainer: FrameLayout
@@ -49,67 +46,50 @@ class AdsShowcaseActivity : ComponentActivity() {
         }
 
         root.addView(TextView(this).apply {
-            text = "تبلیغات Tapsell"
+            text = "ویدیوی آموزشی استودیو"
             textSize = 22f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 8)
+        })
+
+        root.addView(TextView(this).apply {
+            text = "پیش از پخش ویدیو، تبلیغ Pre-roll نمایش داده می‌شود."
+            textSize = 13f
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 16)
         })
 
-        root.addView(Button(this).apply {
-            text = "نمایش تبلیغ آنی"
-            setOnClickListener {
-                TapsellAds.showInterstitial(this@AdsShowcaseActivity) { message ->
-                    Toast.makeText(this@AdsShowcaseActivity, "تبلیغ در دسترس نیست: $message", Toast.LENGTH_SHORT).show()
-                }
-            }
-        })
-
-        root.addView(Button(this).apply {
-            text = "نمایش Native Video"
-            setOnClickListener {
-                nativeContainer.removeAllViews()
-                TapsellAds.showNativeVideo(this@AdsShowcaseActivity, nativeContainer) { message ->
-                    Toast.makeText(this@AdsShowcaseActivity, "Native Video: $message", Toast.LENGTH_SHORT).show()
-                }
-            }
-        })
-
-        nativeContainer = FrameLayout(this).apply {
-            setBackgroundColor(0xFFF2F2F2.toInt())
-        }
-        root.addView(nativeContainer, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 420
-        ))
-
-        root.addView(Button(this).apply {
-            text = "نمایش Pre-roll روی ویدئو"
-            setOnClickListener { requestPreRoll() }
-        })
-
-        prerollContainer = FrameLayout(this)
+        val videoContainer = FrameLayout(this)
         adUiContainer = FrameLayout(this)
         companionContainer = FrameLayout(this)
         playerView = PlayerView(this)
 
-        prerollContainer.addView(adUiContainer, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 520
+        videoContainer.addView(adUiContainer, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 420
         ))
         adUiContainer.addView(playerView, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 420
         ))
-        prerollContainer.addView(companionContainer, FrameLayout.LayoutParams(
+
+        root.addView(videoContainer, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 420
+        ))
+
+        root.addView(companionContainer, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 100
         ))
 
-        root.addView(prerollContainer, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 520
-        ))
+        root.addView(Button(this).apply {
+            text = "پخش ویدیو"
+            setOnClickListener { requestPreRoll() }
+        })
 
         setContentView(root)
     }
 
     private fun requestPreRoll() {
         releasePreRoll()
+
         val tag = TapsellPlus.getVastTag(TapsellConfig.ZONE_PRE_ROLL)
         tapsellPrerollAd = TapsellPlus.requestVastAd(
             this,
@@ -124,13 +104,12 @@ class AdsShowcaseActivity : ComponentActivity() {
                     initializePlayer(tag)
                 }
 
-                override fun onAdEvent(adEvent: AdEvent) {
-                }
+                override fun onAdEvent(adEvent: AdEvent) = Unit
 
                 override fun onAdError(adErrorEvent: AdErrorEvent) {
                     Toast.makeText(
                         this@AdsShowcaseActivity,
-                        "Pre-roll: ${adErrorEvent.error.message}",
+                        "Pre-roll در دسترس نیست: ${adErrorEvent.error.message}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -166,21 +145,17 @@ class AdsShowcaseActivity : ComponentActivity() {
     private fun releasePreRoll() {
         tapsellPrerollAd?.destroyAd()
         tapsellPrerollAd = null
-        playerView.player = null
+        if (::playerView.isInitialized) playerView.player = null
         player?.release()
         player = null
         adsLoader = null
-        nativeContainerOrNoop()
-    }
-
-    private fun nativeContainerOrNoop() {
         if (::adUiContainer.isInitialized) adUiContainer.removeAllViews()
         if (::companionContainer.isInitialized) companionContainer.removeAllViews()
     }
 
     override fun onResume() {
         super.onResume()
-        playerView.player?.let { it.playWhenReady = true }
+        if (::playerView.isInitialized) playerView.player?.let { it.playWhenReady = true }
         tapsellPrerollAd?.resumeAd()
     }
 
