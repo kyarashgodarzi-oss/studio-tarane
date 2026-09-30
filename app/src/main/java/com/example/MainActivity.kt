@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
                     LocalLayoutDirection provides layoutDir,
                     LocalStudioStrings provides currentStrings
                 ) {
-                    StudioTaranehApp(viewModel = viewModel)
+                    StudioTaranehApp(viewModel = viewModel, billingManager = billingManager, activity = this@MainActivity)
                 }
             }
         }
@@ -140,7 +140,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun StudioTaranehApp(viewModel: MainViewModel) {
+fun StudioTaranehApp(
+    viewModel: MainViewModel,
+    billingManager: BazaarBillingManager,
+    activity: ComponentActivity
+) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Splash) }
     var screenStack by remember { mutableStateOf(listOf<Screen>()) }
     var showNewSongDialog by remember { mutableStateOf(false) }
@@ -270,7 +274,7 @@ fun StudioTaranehApp(viewModel: MainViewModel) {
                 VipScreen(
                     viewModel = viewModel,
                     billingManager = billingManager,
-                    activity = this@MainActivity,
+                    activity = activity,
                     onBack = { navigateBack() }
                 )
             }
