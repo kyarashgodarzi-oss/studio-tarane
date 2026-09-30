@@ -42,6 +42,9 @@ jobs:
           printf 'TAPSELL_APP_KEY=gpddcgcgnthsorrgsomlesospgkmardetodjogicakngbrdetccegepaonlonfbpeqboom\n' >> .env
           printf 'TAPSELL_REWARDED_ZONE=6abaebb00a772b2b3f29c16b\n' >> .env
           printf 'TAPSELL_STANDARD_BANNER_ZONE=6abaec923c315037c8c55b1c\n' >> .env
+          printf 'TAPSELL_INSTANT_ZONE=6abaecc83c315037c8c55b1d\n' >> .env
+          printf 'TAPSELL_NATIVE_VIDEO_ZONE=6abaec4169b53c3fd930618e\n' >> .env
+          printf 'TAPSELL_PRE_ROLL_ZONE=6abaec013c315037c8c55b1b\n' >> .env
 
       - name: Build debug APK and AAB
         run: |
