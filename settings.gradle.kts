@@ -20,7 +20,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         // ═══════════════════════════════════════════
-        // مخازن برای Tapsell و Poolakey
+        // مخازن برای Tapsell Plus و Poolakey
         // ═══════════════════════════════════════════
         maven { url = uri("https://maven.tapsell.ir") }
         maven { url = uri("https://jitpack.io") }
