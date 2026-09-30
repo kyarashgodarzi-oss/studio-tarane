@@ -8,10 +8,9 @@ import ir.tapsell.plus.AdRequestCallback
 import ir.tapsell.plus.AdShowListener
 import ir.tapsell.plus.TapsellPlus
 import ir.tapsell.plus.TapsellPlusBannerType
+import ir.tapsell.plus.TapsellPlusInitListener
 import ir.tapsell.plus.model.TapsellPlusAdModel
 import ir.tapsell.plus.model.TapsellPlusErrorModel
-// برای تبلیغات Native باید از این کلاس استفاده کرد
-import ir.tapsell.plus.TapsellPlusNativeBannerAd
 
 class TapsellManager private constructor() {
 
@@ -34,19 +33,25 @@ class TapsellManager private constructor() {
     fun initialize(context: Context) {
         if (isInitialized) return
         try {
-            // بر اساس مستندات، متد initialize نیاز به context و APP_ID دارد [citation:5][citation:18]
-            TapsellPlus.initialize(context, TapsellConfig.APP_ID)
-            isInitialized = true
-            Log.d(TAG, "Tapsell initialized successfully")
+            TapsellPlus.initialize(
+                context,
+                TapsellConfig.APP_ID,
+                object : TapsellPlusInitListener() {
+                    override fun onInitializeSuccess() {
+                        isInitialized = true
+                        Log.d(TAG, "Tapsell initialized successfully")
+                    }
+
+                    override fun onInitializeFailed(adNetworks: ir.tapsell.plus.model.TapsellPlusAdNetwork?, error: ir.tapsell.plus.model.TapsellPlusErrorModel?) {
+                        Log.e(TAG, "Tapsell init failed")
+                    }
+                }
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Tapsell init failed: ${e.message}")
+            Log.e(TAG, "Tapsell init exception: ${e.message}")
         }
     }
 
-    /**
-     * بنر استاندارد (Standard Banner)
-     * بر اساس مستندات، ابتدا درخواست می‌شود و سپس نمایش داده می‌شود [citation:9]
-     */
     fun requestStandardBanner(
         activity: Activity,
         container: FrameLayout,
@@ -66,7 +71,6 @@ class TapsellManager private constructor() {
                             tapsellPlusAdModel.responseId,
                             container,
                             object : AdShowListener() {
-                                // در کلاس AdShowListener متد خطا به صورت `error(message: String)` است
                                 override fun onError(error: TapsellPlusErrorModel?) {
                                     onFailed()
                                 }
@@ -74,23 +78,16 @@ class TapsellManager private constructor() {
                         )
                     }
 
-                    // در کلاس AdRequestCallback متد خطا به صورت `error(message: String)` است
                     override fun error(message: String) {
-                        Log.e(TAG, "Banner request error: $message")
                         onFailed()
                     }
                 }
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Banner request exception: ${e.message}")
             onFailed()
         }
     }
 
-    /**
-     * بنر آنی (Interstitial Banner)
-     * برای جلوگیری از مزاحمت، بین هر نمایش یک فاصله زمانی در نظر گرفته شده است.
-     */
     fun showInterstitial(
         activity: Activity,
         forceShow: Boolean = false,
@@ -135,9 +132,6 @@ class TapsellManager private constructor() {
         }
     }
 
-    /**
-     * ویدیو جایزه‌ای (Rewarded Video)
-     */
     fun showRewardedVideo(
         activity: Activity,
         onRewarded: () -> Unit,
@@ -180,10 +174,6 @@ class TapsellManager private constructor() {
         }
     }
 
-    /**
-     * ویدیو همسان (Native Video)
-     * نام صحیح متد و کلاس طبق مستندات تپسل [citation:12]
-     */
     fun requestNativeVideo(
         activity: Activity,
         container: FrameLayout,
@@ -219,10 +209,6 @@ class TapsellManager private constructor() {
         }
     }
 
-    /**
-     * ویدیو پیش‌نمایشی (Pre-roll Video)
-     * در تپسل پلاس، این نوع تبلیغ با متد Interstitial درخواست می‌شود.
-     */
     fun showPreRollVideo(
         activity: Activity,
         onCompleted: () -> Unit
