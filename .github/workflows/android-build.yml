@@ -46,9 +46,31 @@ jobs:
           printf 'TAPSELL_NATIVE_VIDEO_ZONE=6abaec4169b53c3fd930618e\n' >> .env
           printf 'TAPSELL_PRE_ROLL_ZONE=6abaec013c315037c8c55b1b\n' >> .env
 
+      - name: Prepare release signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > release-keystore.jks
+          cat > key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=$GITHUB_WORKSPACE/release-keystore.jks
+          EOF
+          chmod 600 release-keystore.jks key.properties
+
       - name: Build debug APK and AAB
         run: |
           gradle :app:assembleDebug :app:bundleDebug --stacktrace
+
+      - name: Build signed release AAB
+        run: |
+          gradle :app:bundleRelease --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -61,3 +83,35 @@ jobs:
         with:
           name: studio-tarane-debug-aab
           path: app/build/outputs/bundle/debug/*.aab
+
+      - name: Download Cafe Bazaar BundleSigner
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3             -o bundlesigner-0.1.13.jar             https://github.com/cafebazaar/bundle-signer/releases/download/v0.1.13/bundlesigner-0.1.13.jar
+
+      - name: Generate Cafe Bazaar BIN
+        shell: bash
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          mkdir -p app/build/outputs/bundle/cafebazaar-bin
+          printf '%s\n' "$KEYSTORE_PASSWORD" > /tmp/ks-pass.txt
+          printf '%s\n' "$KEY_PASSWORD" > /tmp/key-pass.txt
+          java -jar bundlesigner-0.1.13.jar genbin             -v             --bundle app/build/outputs/bundle/release/app-release.aab             --bin app/build/outputs/bundle/cafebazaar-bin             --v2-signing-enabled true             --v3-signing-enabled false             --ks release-keystore.jks             --ks-type PKCS12             --ks-key-alias "$KEY_ALIAS"             --ks-pass file:/tmp/ks-pass.txt             --key-pass file:/tmp/key-pass.txt
+          rm -f /tmp/ks-pass.txt /tmp/key-pass.txt release-keystore.jks key.properties
+
+      - name: Upload signed release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-tarane-release-aab
+          path: app/build/outputs/bundle/release/*.aab
+
+      - name: Upload Cafe Bazaar BIN
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-tarane-cafebazaar-bin
+          path: app/build/outputs/bundle/cafebazaar-bin/*.bin
