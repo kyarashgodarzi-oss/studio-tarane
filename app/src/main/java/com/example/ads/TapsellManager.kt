@@ -28,19 +28,23 @@ object TapsellAds {
     private const val TAG = "TapsellAds"
 
     fun initialize(context: Context) {
-        TapsellPlus.initialize(
-            context.applicationContext,
-            TapsellConfig.APP_ID,
-            object : TapsellPlusInitListener {
-                override fun onInitializeSuccess(adNetworks: AdNetworks) {
-                    Log.d(TAG, "Tapsell initialized: ${adNetworks.name}")
+        try {
+            TapsellPlus.initialize(
+                context.applicationContext,
+                TapsellConfig.APP_ID,
+                object : TapsellPlusInitListener {
+                    override fun onInitializeSuccess(adNetworks: AdNetworks) {
+                        Log.d(TAG, "Tapsell initialized: ${adNetworks.name}")
+                    }
+                    override fun onInitializeFailed(adNetworks: AdNetworks, adNetworkError: AdNetworkError) {
+                        Log.e(TAG, "Tapsell init failed: ${adNetworks.name} / ${adNetworkError.errorMessage}")
+                    }
                 }
-                override fun onInitializeFailed(adNetworks: AdNetworks, adNetworkError: AdNetworkError) {
-                    Log.e(TAG, "Tapsell init failed: ${adNetworks.name} / ${adNetworkError.errorMessage}")
-                }
-            }
-        )
-        TapsellPlus.setGDPRConsent(context.applicationContext, true)
+            )
+            TapsellPlus.setGDPRConsent(context.applicationContext, true)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Tapsell initialization skipped after SDK failure", t)
+        }
     }
 
     fun showRewarded(activity: Activity, onRewarded: () -> Unit, onError: (String) -> Unit = {}) {
