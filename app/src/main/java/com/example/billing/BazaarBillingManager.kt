@@ -22,30 +22,39 @@ class BazaarBillingManager(
         private val SUBSCRIPTION_IDS = setOf(MONTHLY, THREE_MONTHS, YEARLY)
     }
 
-    private val payment = Payment(
-        context = context.applicationContext,
-        config = PaymentConfiguration(
-            localSecurityCheck = if (BuildConfig.DEBUG) {
-                SecurityCheck.Disable
-            } else {
-                SecurityCheck.Enable(rsaPublicKey = BuildConfig.BAZAAR_RSA_PUBLIC_KEY)
-            },
-            shouldSupportSubscription = true
+    private val applicationContext = context.applicationContext
+
+    private val payment: Payment by lazy {
+        Payment(
+            context = applicationContext,
+            config = PaymentConfiguration(
+                localSecurityCheck = if (BuildConfig.DEBUG) {
+                    SecurityCheck.Disable
+                } else {
+                    SecurityCheck.Enable(rsaPublicKey = BuildConfig.BAZAAR_RSA_PUBLIC_KEY)
+                },
+                shouldSupportSubscription = true
+            )
         )
-    )
+    }
     private var connection: Connection? = null
 
     fun connect() {
         if (connection != null) return
-        connection = payment.connect {
-            connectionSucceed {
-                onMessage("اتصال به کافه‌بازار برقرار شد")
-                restorePurchases()
+        try {
+            connection = payment.connect {
+                connectionSucceed {
+                    onMessage("اتصال به کافه‌بازار برقرار شد")
+                    restorePurchases()
+                }
+                connectionFailed { error ->
+                    onMessage("اتصال به کافه‌بازار ناموفق بود: " + (error.message ?: "خطای نامشخص"))
+                }
+                disconnected { connection = null }
             }
-            connectionFailed { error ->
-                onMessage("اتصال به کافه‌بازار ناموفق بود: " + (error.message ?: "خطای نامشخص"))
-            }
-            disconnected { connection = null }
+        } catch (t: Throwable) {
+            connection = null
+            onMessage("اتصال به کافه‌بازار در دسترس نیست")
         }
     }
 
