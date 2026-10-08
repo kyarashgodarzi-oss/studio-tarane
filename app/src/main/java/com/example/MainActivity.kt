@@ -181,13 +181,6 @@ fun StudioTaranehApp(
         }
     }
 
-    fun navigateBackWithInterstitial() {
-        navigateBack()
-        if (!viewModel.preferences.isVip.value) {
-            TapsellAds.showInterstitial(activity)
-        }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -206,14 +199,14 @@ fun StudioTaranehApp(
                     viewModel = viewModel,
                     onNavigate = { route ->
                         when (route) {
-                            "my_songs" -> requestRewardedAccess("ترانه‌های من") { navigateTo(Screen.AllSongs) }
-                            "new_song" -> requestRewardedAccess("ایجاد ترانه جدید") { showNewSongDialog = true }
+                            "my_songs" -> navigateTo(Screen.AllSongs)
+                            "new_song" -> { showNewSongDialog = true }
                             "voice_recording" -> requestRewardedAccess("استودیو ضبط صدا") { navigateTo(Screen.VoiceStudio) }
                             "rhythm_maker" -> requestRewardedAccess("ساخت ریتم") { navigateTo(Screen.RhythmMetronome) }
-                            "favorites" -> requestRewardedAccess("ترانه‌های موردعلاقه") { navigateTo(Screen.FavoriteSongs) }
-                            "recent" -> requestRewardedAccess("ترانه‌های اخیر") { navigateTo(Screen.RecentSongs) }
-                            "trash" -> requestRewardedAccess("سطل زباله") { navigateTo(Screen.Trash) }
-                            "backup" -> requestRewardedAccess("پشتیبان‌گیری") { navigateTo(Screen.Backup) }
+                            "favorites" -> navigateTo(Screen.FavoriteSongs)
+                            "recent" -> navigateTo(Screen.RecentSongs)
+                            "trash" -> navigateTo(Screen.Trash)
+                            "backup" -> navigateTo(Screen.Backup)
                             "vip" -> navigateTo(Screen.Vip)
                             "settings" -> navigateTo(Screen.Settings)
                         }
@@ -225,12 +218,10 @@ fun StudioTaranehApp(
                     viewModel = viewModel,
                     mode = "ALL",
                     onOpenSong = { songId ->
-                        requestRewardedAccess("ویرایش ترانه") {
-                            viewModel.openSong(songId)
-                            navigateTo(Screen.SongEditor(songId))
-                        }
+                        viewModel.openSong(songId)
+                        navigateTo(Screen.SongEditor(songId))
                     },
-                    onNewSong = { requestRewardedAccess("ایجاد ترانه جدید") { showNewSongDialog = true } },
+                    onNewSong = { showNewSongDialog = true },
                     onBack = { navigateBack() }
                 )
             }
@@ -239,12 +230,10 @@ fun StudioTaranehApp(
                     viewModel = viewModel,
                     mode = "FAVORITES",
                     onOpenSong = { songId ->
-                        requestRewardedAccess("ویرایش ترانه") {
-                            viewModel.openSong(songId)
-                            navigateTo(Screen.SongEditor(songId))
-                        }
+                        viewModel.openSong(songId)
+                        navigateTo(Screen.SongEditor(songId))
                     },
-                    onNewSong = { requestRewardedAccess("ایجاد ترانه جدید") { showNewSongDialog = true } },
+                    onNewSong = { showNewSongDialog = true },
                     onBack = { navigateBack() }
                 )
             }
@@ -253,12 +242,10 @@ fun StudioTaranehApp(
                     viewModel = viewModel,
                     mode = "RECENT",
                     onOpenSong = { songId ->
-                        requestRewardedAccess("ویرایش ترانه") {
-                            viewModel.openSong(songId)
-                            navigateTo(Screen.SongEditor(songId))
-                        }
+                        viewModel.openSong(songId)
+                        navigateTo(Screen.SongEditor(songId))
                     },
-                    onNewSong = { requestRewardedAccess("ایجاد ترانه جدید") { showNewSongDialog = true } },
+                    onNewSong = { showNewSongDialog = true },
                     onBack = { navigateBack() }
                 )
             }
@@ -266,7 +253,7 @@ fun StudioTaranehApp(
                 SongEditorScreen(
                     viewModel = viewModel,
                     songId = screen.songId,
-                    onBack = { navigateBackWithInterstitial() }
+                    onBack = { navigateBack() }
                 )
             }
             is Screen.VoiceStudio -> {
