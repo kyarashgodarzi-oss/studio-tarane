@@ -18,6 +18,7 @@ import ir.tapsell.plus.AdShowListener
 import ir.tapsell.plus.TapsellPlus
 import ir.tapsell.plus.TapsellPlusBannerType
 import ir.tapsell.plus.TapsellPlusInitListener
+import ir.tapsell.plus.TapsellPlusVideoAdHolder
 import ir.tapsell.plus.model.AdNetworkError
 import ir.tapsell.plus.model.AdNetworks
 import ir.tapsell.plus.model.TapsellPlusAdModel
@@ -25,18 +26,27 @@ import ir.tapsell.plus.model.TapsellPlusErrorModel
 
 object TapsellAds {
     private const val TAG = "TapsellAds"
+
     fun initialize(context: Context) {
-        TapsellPlus.initialize(context.applicationContext, TapsellConfig.APP_ID,
-            object : TapsellPlusInitListener {
-                override fun onInitializeSuccess(adNetworks: AdNetworks) {
-                    Log.d(TAG, "Tapsell initialized: ${adNetworks.name}")
+        try {
+            TapsellPlus.initialize(
+                context.applicationContext,
+                TapsellConfig.APP_ID,
+                object : TapsellPlusInitListener {
+                    override fun onInitializeSuccess(adNetworks: AdNetworks) {
+                        Log.d(TAG, "Tapsell initialized: ${adNetworks.name}")
+                    }
+                    override fun onInitializeFailed(adNetworks: AdNetworks, adNetworkError: AdNetworkError) {
+                        Log.e(TAG, "Tapsell init failed: ${adNetworks.name} / ${adNetworkError.errorMessage}")
+                    }
                 }
-                override fun onInitializeFailed(adNetworks: AdNetworks, adNetworkError: AdNetworkError) {
-                    Log.e(TAG, "Tapsell init failed: ${adNetworks.name} / ${adNetworkError.errorMessage}")
-                }
-            })
-        TapsellPlus.setGDPRConsent(context.applicationContext, true)
+            )
+            TapsellPlus.setGDPRConsent(context.applicationContext, true)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Tapsell initialization skipped after SDK failure", t)
+        }
     }
+
     fun showRewarded(activity: Activity, onRewarded: () -> Unit, onError: (String) -> Unit = {}) {
         if (activity.isFinishing || activity.isDestroyed) return
         TapsellPlus.requestRewardedVideoAd(activity, TapsellConfig.ZONE_REWARDED_VIDEO,
@@ -51,6 +61,40 @@ object TapsellAds {
                 override fun error(message: String) { onError(message) }
             })
     }
+
+    fun showInterstitial(activity: Activity, onError: (String) -> Unit = {}) {
+        if (activity.isFinishing || activity.isDestroyed) return
+        TapsellPlus.requestInterstitialAd(activity, TapsellConfig.ZONE_INTERSTITIAL,
+            object : AdRequestCallback() {
+                override fun response(ad: TapsellPlusAdModel) {
+                    if (activity.isFinishing || activity.isDestroyed) return
+                    TapsellPlus.showInterstitialAd(activity, ad.responseId, object : AdShowListener() {
+                        override fun onError(error: TapsellPlusErrorModel) { onError(error.toString()) }
+                    })
+                }
+                override fun error(message: String) { onError(message) }
+            })
+    }
+
+    fun showNativeVideo(activity: Activity, container: ViewGroup, onError: (String) -> Unit = {}) {
+        if (activity.isFinishing || activity.isDestroyed) return
+        TapsellPlus.requestNativeVideo(activity, TapsellConfig.ZONE_NATIVE_VIDEO,
+            object : AdRequestCallback() {
+                override fun response(ad: TapsellPlusAdModel) {
+                    if (activity.isFinishing || activity.isDestroyed) return
+                    val holder = TapsellPlusVideoAdHolder.Builder()
+                        .setContentViewTemplate(com.example.R.layout.native_vid_template)
+                        .setAppInstallationViewTemplate(ir.tapsell.sdk.R.layout.tapsell_app_installation_video_ad_template)
+                        .setAdContainer(container)
+                        .build()
+                    TapsellPlus.showNativeVideo(activity, ad.responseId, holder, object : AdShowListener() {
+                        override fun onError(error: TapsellPlusErrorModel) { onError(error.toString()) }
+                    })
+                }
+                override fun error(message: String) { onError(message) }
+            })
+    }
+
     fun loadBanner(activity: Activity, container: ViewGroup) {
         if (activity.isFinishing || activity.isDestroyed) return
         TapsellPlus.requestStandardBannerAd(activity, TapsellConfig.ZONE_STANDARD_BANNER,
@@ -67,6 +111,31 @@ object TapsellAds {
             })
     }
 }
+
+@Composable
+fun TapsellNativeVideo(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val activity = context as? Activity ?: return
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(260.dp)
+    ) {
+        AndroidView(
+            modifier = Modifier.fillMaxWidth(),
+            factory = {
+                FrameLayout(context).also { container ->
+                    container.layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    TapsellAds.showNativeVideo(activity, container)
+                }
+            }
+        )
+    }
+}
+
 @Composable
 fun TapsellBanner(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -74,7 +143,10 @@ fun TapsellBanner(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxWidth().height(60.dp)) {
         AndroidView(modifier = Modifier.fillMaxWidth(), factory = {
             FrameLayout(context).also { container ->
-                container.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                container.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
                 TapsellAds.loadBanner(activity, container)
             }
         })

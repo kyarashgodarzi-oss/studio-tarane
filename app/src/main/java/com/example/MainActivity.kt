@@ -1,6 +1,7 @@
 package com.example
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import com.example.ui.MainViewModel
+import com.example.ads.TapsellAds
+import com.example.billing.BazaarBillingManager
 import com.example.ui.localization.LocalStudioStrings
 import com.example.ui.localization.getStudioStrings
 import com.example.ui.screens.BackupExportScreen
@@ -53,6 +56,7 @@ sealed class Screen {
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+    private lateinit var billingManager: BazaarBillingManager
 
     override fun attachBaseContext(newBase: android.content.Context) {
         val prefs = newBase.getSharedPreferences("studio_taraneh_prefs", android.content.Context.MODE_PRIVATE)
@@ -79,6 +83,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        TapsellAds.initialize(this)
+        billingManager = BazaarBillingManager(
+            context = this,
+            onVipChanged = { isVip -> viewModel.preferences.setVip(isVip) },
+            onMessage = { message ->
+                android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+            }
+        )
+        billingManager.connect()
+
         java.util.Locale.setDefault(java.util.Locale("fa", "IR"))
         enableEdgeToEdge()
         setContent {
@@ -113,15 +128,24 @@ class MainActivity : ComponentActivity() {
                     LocalLayoutDirection provides layoutDir,
                     LocalStudioStrings provides currentStrings
                 ) {
-                    StudioTaranehApp(viewModel = viewModel)
+                    StudioTaranehApp(viewModel = viewModel, billingManager = billingManager, activity = this@MainActivity)
                 }
             }
         }
     }
+
+    override fun onDestroy() {
+        if (::billingManager.isInitialized) billingManager.disconnect()
+        super.onDestroy()
+    }
 }
 
 @Composable
-fun StudioTaranehApp(viewModel: MainViewModel) {
+fun StudioTaranehApp(
+    viewModel: MainViewModel,
+    billingManager: BazaarBillingManager,
+    activity: ComponentActivity
+) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Splash) }
     var screenStack by remember { mutableStateOf(listOf<Screen>()) }
     var showNewSongDialog by remember { mutableStateOf(false) }
@@ -129,6 +153,22 @@ fun StudioTaranehApp(viewModel: MainViewModel) {
     fun navigateTo(screen: Screen) {
         screenStack = screenStack + currentScreen
         currentScreen = screen
+    }
+    fun requestRewardedAccess(featureName: String, onGranted: () -> Unit) {
+        if (viewModel.preferences.isVip.value) {
+            onGranted()
+            return
+        }
+        TapsellAds.showRewarded(
+            activity = activity,
+            onRewarded = {
+                Toast.makeText(activity, "تبلیغ کامل شد؛ $featureName فعال شد", Toast.LENGTH_SHORT).show()
+                onGranted()
+            },
+            onError = { _ ->
+                Toast.makeText(activity, "برای استفاده از $featureName باید تبلیغ جایزه‌ای در دسترس باشد", Toast.LENGTH_LONG).show()
+            }
+        )
     }
 
     fun navigateBack() {
@@ -160,9 +200,9 @@ fun StudioTaranehApp(viewModel: MainViewModel) {
                     onNavigate = { route ->
                         when (route) {
                             "my_songs" -> navigateTo(Screen.AllSongs)
-                            "new_song" -> showNewSongDialog = true
-                            "voice_recording" -> navigateTo(Screen.VoiceStudio)
-                            "rhythm_maker" -> navigateTo(Screen.RhythmMetronome)
+                            "new_song" -> { showNewSongDialog = true }
+                            "voice_recording" -> requestRewardedAccess("استودیو ضبط صدا") { navigateTo(Screen.VoiceStudio) }
+                            "rhythm_maker" -> requestRewardedAccess("ساخت ریتم") { navigateTo(Screen.RhythmMetronome) }
                             "favorites" -> navigateTo(Screen.FavoriteSongs)
                             "recent" -> navigateTo(Screen.RecentSongs)
                             "trash" -> navigateTo(Screen.Trash)
@@ -250,6 +290,8 @@ fun StudioTaranehApp(viewModel: MainViewModel) {
             is Screen.Vip -> {
                 VipScreen(
                     viewModel = viewModel,
+                    billingManager = billingManager,
+                    activity = activity,
                     onBack = { navigateBack() }
                 )
             }
