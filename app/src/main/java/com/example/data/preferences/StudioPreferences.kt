@@ -63,18 +63,28 @@ class StudioPreferences(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("studio_taraneh_prefs", Context.MODE_PRIVATE)
 
+    // Be defensive when reading persisted enum values. A value written by an older
+    // build or corrupted preferences must not crash MainActivity during ViewModel creation.
+    private inline fun <reified T : Enum<T>> readEnumPreference(
+        key: String,
+        defaultValue: T
+    ): T {
+        val storedValue = prefs.getString(key, null) ?: return defaultValue
+        return enumValues<T>().firstOrNull { it.name == storedValue } ?: defaultValue
+    }
+
     private val _themeMode = MutableStateFlow(
-        AppThemeMode.valueOf(prefs.getString("theme_mode", AppThemeMode.NEON_STUDIO.name) ?: AppThemeMode.NEON_STUDIO.name)
+        readEnumPreference("theme_mode", AppThemeMode.NEON_STUDIO)
     )
     val themeMode: StateFlow<AppThemeMode> = _themeMode.asStateFlow()
 
     private val _dayNight = MutableStateFlow(
-        DayNightOption.valueOf(prefs.getString("day_night", DayNightOption.DARK.name) ?: DayNightOption.DARK.name)
+        readEnumPreference("day_night", DayNightOption.DARK)
     )
     val dayNight: StateFlow<DayNightOption> = _dayNight.asStateFlow()
 
     private val _fontSize = MutableStateFlow(
-        EditorFontSize.valueOf(prefs.getString("font_size", EditorFontSize.MEDIUM.name) ?: EditorFontSize.MEDIUM.name)
+        readEnumPreference("font_size", EditorFontSize.MEDIUM)
     )
     val fontSize: StateFlow<EditorFontSize> = _fontSize.asStateFlow()
 
