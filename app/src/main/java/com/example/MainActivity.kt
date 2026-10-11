@@ -84,7 +84,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        TapsellAds.initialize(this)
+        // Ads are optional; a broken SDK initialization must not prevent the editor from opening.
+        try {
+            TapsellAds.initialize(this)
+        } catch (e: Exception) {
+            android.util.Log.e("StudioTaraneh", "Tapsell initialization failed; continuing without ads", e)
+        } catch (e: LinkageError) {
+            android.util.Log.e("StudioTaraneh", "Tapsell SDK unavailable; continuing without ads", e)
+        }
+
         billingManager = BazaarBillingManager(
             context = this,
             onVipChanged = { isVip -> viewModel.preferences.setVip(isVip) },
