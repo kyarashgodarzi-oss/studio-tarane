@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, tapsell-vip-integration, feature/vip-tapsell-final, fix/startup-crash-v2]
   pull_request:
-    branches: [main]
+    branches: [main, feature/vip-tapsell-final]
   workflow_dispatch:
 
 permissions:
