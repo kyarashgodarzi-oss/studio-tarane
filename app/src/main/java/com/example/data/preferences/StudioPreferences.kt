@@ -95,16 +95,32 @@ class StudioPreferences(context: Context) {
     val fontSize: StateFlow<EditorFontSize> = _fontSize.asStateFlow()
 
     // Default language is Persian until the user explicitly selects another language.
+    private fun readBooleanPreference(key: String, defaultValue: Boolean): Boolean {
+        return try {
+            prefs.getBoolean(key, defaultValue)
+        } catch (_: ClassCastException) {
+            defaultValue
+        }
+    }
+
+    private fun readStringPreference(key: String, defaultValue: String): String {
+        return try {
+            prefs.getString(key, defaultValue) ?: defaultValue
+        } catch (_: ClassCastException) {
+            defaultValue
+        }
+    }
+
     private val _language = MutableStateFlow(
-        if (!prefs.getBoolean("has_user_selected_language", false)) {
+        if (!readBooleanPreference("has_user_selected_language", false)) {
             AppLanguage.PERSIAN
         } else {
-            AppLanguage.fromCode(prefs.getString("app_language", "fa"))
+            AppLanguage.fromCode(readStringPreference("app_language", "fa"))
         }
     )
     val language: StateFlow<AppLanguage> = _language.asStateFlow()
 
-    private val _isVip = MutableStateFlow(prefs.getBoolean("is_vip_user", false))
+    private val _isVip = MutableStateFlow(readBooleanPreference("is_vip_user", false))
     val isVip: StateFlow<Boolean> = _isVip.asStateFlow()
 
     fun setThemeMode(mode: AppThemeMode) {
