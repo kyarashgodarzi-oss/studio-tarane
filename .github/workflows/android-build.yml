@@ -86,7 +86,7 @@ jobs:
           test -f "$AAB"
           VERIFY_OUTPUT="$(jarsigner -verify "$AAB" 2>&1)"
           printf '%s\n' "$VERIFY_OUTPUT"
-          printf '%s\n' "$VERIFY_OUTPUT" | grep -q "jar verified."
+          [[ "$VERIFY_OUTPUT" == *"jar verified."* ]]
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
