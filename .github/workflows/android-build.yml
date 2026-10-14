@@ -46,6 +46,9 @@ jobs:
           printf 'TAPSELL_NATIVE_VIDEO_ZONE=6abaec4169b53c3fd930618e\n' >> .env
           printf 'TAPSELL_PRE_ROLL_ZONE=6abaec013c315037c8c55b1b\n' >> .env
 
+      - name: Run unit and Robolectric regression tests
+        run: gradle :app:testDebugUnitTest --stacktrace
+
       - name: Prepare release signing
         shell: bash
         env:
