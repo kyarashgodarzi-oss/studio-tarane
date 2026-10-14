@@ -156,8 +156,13 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        if (::billingManager.isInitialized) billingManager.disconnect()
-        super.onDestroy()
+        try {
+            if (::billingManager.isInitialized) billingManager.disconnect()
+        } catch (e: Exception) {
+            android.util.Log.w("StudioTaraneh", "Billing disconnect failed during shutdown", e)
+        } finally {
+            super.onDestroy()
+        }
     }
 }
 
