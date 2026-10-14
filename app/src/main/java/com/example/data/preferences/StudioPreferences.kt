@@ -63,14 +63,20 @@ class StudioPreferences(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("studio_taraneh_prefs", Context.MODE_PRIVATE)
 
-    // Be defensive when reading persisted enum values. A value written by an older
-    // build or corrupted preferences must not crash MainActivity during ViewModel creation.
+    // Preferences can outlive app versions. Handle unknown enum names and values stored
+    // under the wrong type so corrupt/legacy settings cannot crash ViewModel creation.
     private inline fun <reified T : Enum<T>> readEnumPreference(
         key: String,
         defaultValue: T
     ): T {
-        val storedValue = prefs.getString(key, null) ?: return defaultValue
-        return enumValues<T>().firstOrNull { it.name == storedValue } ?: defaultValue
+        val storedValue = try {
+            prefs.getString(key, null)
+        } catch (_: ClassCastException) {
+            null
+        }
+        return storedValue?.let { value ->
+            enumValues<T>().firstOrNull { it.name == value }
+        } ?: defaultValue
     }
 
     private val _themeMode = MutableStateFlow(
@@ -88,8 +94,7 @@ class StudioPreferences(context: Context) {
     )
     val fontSize: StateFlow<EditorFontSize> = _fontSize.asStateFlow()
 
-    // Default language is ALWAYS Persian (fa) - Requirement 30 & Mandatory fix
-    // Key MUST return "fa", absolutely no fallback to "en"
+    // Default language is Persian until the user explicitly selects another language.
     private val _language = MutableStateFlow(
         if (!prefs.getBoolean("has_user_selected_language", false)) {
             AppLanguage.PERSIAN
