@@ -115,7 +115,6 @@ class MainActivity : ComponentActivity() {
         )
         billingManager.connect()
 
-        java.util.Locale.setDefault(java.util.Locale("fa", "IR"))
         enableEdgeToEdge()
         setContent {
             val themeMode by viewModel.preferences.themeMode.collectAsState()
