@@ -214,7 +214,7 @@ object PersianStrings : StudioStrings {
     override val appName = "استودیو ترانه"
     override val appTitle = "استودیو ترانه"
     override val creatorName = "سیدحمید موسوی زاده"
-    override val appVersion = "نسخه 1.0.0"
+    override val appVersion = "نسخه 1.1.2"
     override val appSubtitle = "دفترچه تخصصی شعر، رپ، پاپ و ضبط صدا"
 
     override val menuMainTitle = "بخش‌های اصلی استودیو"
@@ -378,7 +378,7 @@ object EnglishStrings : StudioStrings {
     override val appName = "Studio Taraneh"
     override val appTitle = "Studio Taraneh"
     override val creatorName = "Seyed Hamid Mousavizadeh"
-    override val appVersion = "Version 1.0.0"
+    override val appVersion = "Version 1.1.2"
     override val appSubtitle = "Professional Songwriting, Lyrics Notebook & Audio Recording"
 
     override val menuMainTitle = "Studio Workspaces"
@@ -542,7 +542,7 @@ object ArabicStrings : StudioStrings {
     override val appName = "استوديو ترانه"
     override val appTitle = "استوديو ترانه"
     override val creatorName = "سيد حميد موسوي زاده"
-    override val appVersion = "الإصدار 1.0.0"
+    override val appVersion = "الإصدار 1.1.2"
     override val appSubtitle = "دفتر كتابة الأغاني وتسجيل الألحان الاحترافي"
 
     override val menuMainTitle = "أقسام الاستوديو"
@@ -706,7 +706,7 @@ object TurkishStrings : StudioStrings {
     override val appName = "Studio Taraneh"
     override val appTitle = "Studio Taraneh"
     override val creatorName = "Seyed Hamid Mousavizadeh"
-    override val appVersion = "Sürüm 1.0.0"
+    override val appVersion = "Sürüm 1.1.2"
     override val appSubtitle = "Profesyonel Şarkı Sözü Defteri ve Ses Kaydı"
 
     override val menuMainTitle = "Stüdyo Alanları"
@@ -870,7 +870,7 @@ object SpanishStrings : StudioStrings {
     override val appName = "Studio Taraneh"
     override val appTitle = "Studio Taraneh"
     override val creatorName = "Seyed Hamid Mousavizadeh"
-    override val appVersion = "Versión 1.0.0"
+    override val appVersion = "Versión 1.1.2"
     override val appSubtitle = "Cuaderno Profesional de Composición y Grabación"
 
     override val menuMainTitle = "Espacios del Estudio"
@@ -1034,7 +1034,7 @@ object FrenchStrings : StudioStrings {
     override val appName = "Studio Taraneh"
     override val appTitle = "Studio Taraneh"
     override val creatorName = "Seyed Hamid Mousavizadeh"
-    override val appVersion = "Version 1.0.0"
+    override val appVersion = "Version 1.1.2"
     override val appSubtitle = "Cahier Professionnel d'Écriture et d'Enregistrement"
 
     override val menuMainTitle = "Espaces du Studio"
@@ -1198,7 +1198,7 @@ object GermanStrings : StudioStrings {
     override val appName = "Studio Taraneh"
     override val appTitle = "Studio Taraneh"
     override val creatorName = "Seyed Hamid Mousavizadeh"
-    override val appVersion = "Version 1.0.0"
+    override val appVersion = "Version 1.1.2"
     override val appSubtitle = "Professionelles Songwriting-, Notiz- und Audio-Studio"
 
     override val menuMainTitle = "Studio-Bereiche"
@@ -1362,7 +1362,7 @@ object RussianStrings : StudioStrings {
     override val appName = "Studio Taraneh"
     override val appTitle = "Studio Taraneh"
     override val creatorName = "Сейед Хамид Мусавизаде"
-    override val appVersion = "Версия 1.0.0"
+    override val appVersion = "Версия 1.1.2"
     override val appSubtitle = "Профессиональный блокнот поэта-песенника и студия звукозаписи"
 
     override val menuMainTitle = "Разделы студии"
