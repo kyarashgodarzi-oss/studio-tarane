@@ -46,6 +46,12 @@ jobs:
           printf 'TAPSELL_NATIVE_VIDEO_ZONE=6abaec4169b53c3fd930618e\n' >> .env
           printf 'TAPSELL_PRE_ROLL_ZONE=6abaec013c315037c8c55b1b\n' >> .env
 
+      - name: Run unit and Robolectric regression tests
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Run Android release lint
+        run: gradle :app:lintRelease --stacktrace
+
       - name: Prepare release signing
         shell: bash
         env:
@@ -64,19 +70,13 @@ jobs:
           EOF
           chmod 600 release-keystore.jks key.properties
 
-      - name: Run unit and Robolectric regression tests
-        run: gradle :app:testDebugUnitTest --stacktrace
-
-      - name: Run Android release lint
-        run: gradle :app:lintRelease --stacktrace
-
       - name: Build debug APK and AAB
         run: |
-          gradle :app:assembleDebug :app:bundleDebug --stacktrace
+          gradle --no-configuration-cache :app:assembleDebug :app:bundleDebug --stacktrace
 
       - name: Build signed release AAB
         run: |
-          gradle :app:bundleRelease :app:assembleRelease --stacktrace
+          gradle --no-configuration-cache :app:bundleRelease :app:assembleRelease --stacktrace
 
       - name: Verify release AAB signature
         shell: bash
