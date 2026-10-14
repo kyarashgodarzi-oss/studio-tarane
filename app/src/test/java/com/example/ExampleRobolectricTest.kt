@@ -134,6 +134,23 @@ class ExampleRobolectricTest {
     }
 
     @Test
+    fun `wrongly typed language and VIP preferences use safe defaults`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val shared = context.getSharedPreferences("studio_taraneh_prefs", Context.MODE_PRIVATE)
+        shared.edit()
+            .clear()
+            .putInt("has_user_selected_language", 1)
+            .putInt("app_language", 42)
+            .putString("is_vip_user", "yes")
+            .commit()
+
+        val prefs = com.example.data.preferences.StudioPreferences(context)
+
+        assertEquals(com.example.data.preferences.AppLanguage.PERSIAN, prefs.language.value)
+        assertTrue(!prefs.isVip.value)
+    }
+
+    @Test
     fun `invalid or wrongly typed saved enum preferences use safe defaults`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val shared = context.getSharedPreferences("studio_taraneh_prefs", Context.MODE_PRIVATE)
