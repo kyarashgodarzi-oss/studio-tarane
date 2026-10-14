@@ -60,8 +60,21 @@ class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: android.content.Context) {
         val prefs = newBase.getSharedPreferences("studio_taraneh_prefs", android.content.Context.MODE_PRIVATE)
-        val hasUserSelected = prefs.getBoolean("has_user_selected_language", false)
-        val langCode = if (hasUserSelected) prefs.getString("app_language", "fa") ?: "fa" else "fa"
+        // A malformed or legacy preference must never crash Activity startup.
+        val hasUserSelected = try {
+            prefs.getBoolean("has_user_selected_language", false)
+        } catch (_: ClassCastException) {
+            false
+        }
+        val langCode = if (hasUserSelected) {
+            try {
+                prefs.getString("app_language", "fa") ?: "fa"
+            } catch (_: ClassCastException) {
+                "fa"
+            }
+        } else {
+            "fa"
+        }
         val locale = when (langCode.lowercase()) {
             "fa", "persian" -> java.util.Locale("fa", "IR")
             "ar", "arabic" -> java.util.Locale("ar")
