@@ -49,6 +49,9 @@ jobs:
       - name: Run unit and Robolectric regression tests
         run: gradle :app:testDebugUnitTest --stacktrace
 
+      - name: Run Android release lint
+        run: gradle :app:lintRelease --stacktrace
+
       - name: Prepare release signing
         shell: bash
         env:
