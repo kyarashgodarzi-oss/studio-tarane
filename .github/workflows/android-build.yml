@@ -2,9 +2,9 @@ name: Android Build
 
 on:
   push:
-    branches: [main, tapsell-vip-integration, feature/vip-tapsell-final]
+    branches: [main, tapsell-vip-integration, feature/vip-tapsell-final, fix/startup-crash-v2]
   pull_request:
-    branches: [main]
+    branches: [main, feature/vip-tapsell-final]
   workflow_dispatch:
 
 permissions:
@@ -46,6 +46,12 @@ jobs:
           printf 'TAPSELL_NATIVE_VIDEO_ZONE=6abaec4169b53c3fd930618e\n' >> .env
           printf 'TAPSELL_PRE_ROLL_ZONE=6abaec013c315037c8c55b1b\n' >> .env
 
+      - name: Run unit and Robolectric regression tests
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Run Android release lint
+        run: gradle :app:lintRelease --stacktrace
+
       - name: Prepare release signing
         shell: bash
         env:
@@ -66,11 +72,21 @@ jobs:
 
       - name: Build debug APK and AAB
         run: |
-          gradle :app:assembleDebug :app:bundleDebug --stacktrace
+          gradle --no-configuration-cache :app:assembleDebug :app:bundleDebug --stacktrace
 
       - name: Build signed release AAB
         run: |
-          gradle :app:bundleRelease --stacktrace
+          gradle --no-configuration-cache :app:bundleRelease :app:assembleRelease --stacktrace
+
+      - name: Verify release AAB signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -f "$AAB"
+          VERIFY_OUTPUT="$(jarsigner -verify "$AAB" 2>&1)"
+          printf '%s\n' "$VERIFY_OUTPUT"
+          [[ "$VERIFY_OUTPUT" == *"jar verified."* ]]
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -83,6 +99,46 @@ jobs:
         with:
           name: studio-tarane-debug-aab
           path: app/build/outputs/bundle/debug/*.aab
+
+      - name: Sign release APK
+        shell: bash
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          UNSIGNED_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
+
+          # Gradle signs release APKs when key.properties is available.
+          # Keep a fallback for local/unsigned builds so this step remains reusable.
+          if [ -f "$UNSIGNED_APK" ]; then
+            "$APKSIGNER" sign \
+              --ks release-keystore.jks \
+              --ks-type PKCS12 \
+              --ks-key-alias "$KEY_ALIAS" \
+              --ks-pass env:KEYSTORE_PASSWORD \
+              --key-pass env:KEY_PASSWORD \
+              --out "$RELEASE_APK" \
+              "$UNSIGNED_APK"
+          fi
+
+          test -f "$RELEASE_APK"
+          "$APKSIGNER" verify --verbose --print-certs "$RELEASE_APK"
+
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -x "$AAPT"
+          BADGING="$("$AAPT" dump badging "$RELEASE_APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.aistudio.studiotaraneh.vmpzrq' versionCode='4' versionName='1.1.2' "
+
+      - name: Upload signed release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-tarane-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
 
       - name: Download Cafe Bazaar BundleSigner
         shell: bash

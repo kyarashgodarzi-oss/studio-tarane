@@ -60,8 +60,21 @@ class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: android.content.Context) {
         val prefs = newBase.getSharedPreferences("studio_taraneh_prefs", android.content.Context.MODE_PRIVATE)
-        val hasUserSelected = prefs.getBoolean("has_user_selected_language", false)
-        val langCode = if (hasUserSelected) prefs.getString("app_language", "fa") ?: "fa" else "fa"
+        // A malformed or legacy preference must never crash Activity startup.
+        val hasUserSelected = try {
+            prefs.getBoolean("has_user_selected_language", false)
+        } catch (_: ClassCastException) {
+            false
+        }
+        val langCode = if (hasUserSelected) {
+            try {
+                prefs.getString("app_language", "fa") ?: "fa"
+            } catch (_: ClassCastException) {
+                "fa"
+            }
+        } else {
+            "fa"
+        }
         val locale = when (langCode.lowercase()) {
             "fa", "persian" -> java.util.Locale("fa", "IR")
             "ar", "arabic" -> java.util.Locale("ar")
@@ -84,7 +97,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        TapsellAds.initialize(this)
+        // Ads are optional; a broken SDK initialization must not prevent the editor from opening.
+        try {
+            TapsellAds.initialize(this)
+        } catch (e: Exception) {
+            android.util.Log.e("StudioTaraneh", "Tapsell initialization failed; continuing without ads", e)
+        } catch (e: LinkageError) {
+            android.util.Log.e("StudioTaraneh", "Tapsell SDK unavailable; continuing without ads", e)
+        }
+
         billingManager = BazaarBillingManager(
             context = this,
             onVipChanged = { isVip -> viewModel.preferences.setVip(isVip) },
@@ -94,7 +115,6 @@ class MainActivity : ComponentActivity() {
         )
         billingManager.connect()
 
-        java.util.Locale.setDefault(java.util.Locale("fa", "IR"))
         enableEdgeToEdge()
         setContent {
             val themeMode by viewModel.preferences.themeMode.collectAsState()
@@ -135,8 +155,13 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        if (::billingManager.isInitialized) billingManager.disconnect()
-        super.onDestroy()
+        try {
+            if (::billingManager.isInitialized) billingManager.disconnect()
+        } catch (e: Exception) {
+            android.util.Log.w("StudioTaraneh", "Billing disconnect failed during shutdown", e)
+        } finally {
+            super.onDestroy()
+        }
     }
 }
 

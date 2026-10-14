@@ -10,6 +10,13 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+val releaseSigningPropertiesFile = rootProject.file("key.properties")
+val releaseSigningProperties = Properties().apply {
+    if (releaseSigningPropertiesFile.exists()) {
+        FileInputStream(releaseSigningPropertiesFile).use { load(it) }
+    }
+}
+
 android {
     namespace = "com.example"
     compileSdk { version = release(36) { minorApiLevel = 1 } }
@@ -18,14 +25,35 @@ android {
         applicationId = "com.aistudio.studiotaraneh.vmpzrq"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 4
+        versionName = "1.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningPropertiesFile.exists()) {
+                storeFile = rootProject.file(
+                    releaseSigningProperties.getProperty("storeFile")
+                        ?: error("storeFile is missing from key.properties")
+                )
+                storePassword = releaseSigningProperties.getProperty("storePassword")
+                    ?: error("storePassword is missing from key.properties")
+                keyAlias = releaseSigningProperties.getProperty("keyAlias")
+                    ?: error("keyAlias is missing from key.properties")
+                keyPassword = releaseSigningProperties.getProperty("keyPassword")
+                    ?: error("keyPassword is missing from key.properties")
+                storeType = "PKCS12"
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseSigningPropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isCrunchPngs = false
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
