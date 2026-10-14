@@ -14,6 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -131,6 +132,23 @@ class ExampleRobolectricTest {
         assertTrue(!prefs.isVip.value)
         prefs.setVip(true)
         assertTrue(prefs.isVip.value)
+    }
+
+    @Test
+    fun `main activity starts with malformed saved language preferences`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        context.getSharedPreferences("studio_taraneh_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .putInt("has_user_selected_language", 1)
+            .putInt("app_language", 42)
+            .putInt("is_vip_user", 1)
+            .commit()
+
+        val controller = Robolectric.buildActivity(MainActivity::class.java)
+        controller.setup()
+        assertNotNull(controller.get())
+        controller.pause().stop().destroy()
     }
 
     @Test
