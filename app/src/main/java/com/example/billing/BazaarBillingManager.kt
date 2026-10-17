@@ -2,7 +2,6 @@ package com.example.billing
 
 import android.content.Context
 import androidx.activity.ComponentActivity
-import com.example.BuildConfig
 import ir.cafebazaar.poolakey.Connection
 import ir.cafebazaar.poolakey.Payment
 import ir.cafebazaar.poolakey.config.PaymentConfiguration
@@ -16,7 +15,7 @@ class BazaarBillingManager(
 ) {
     companion object {
         const val MONTHLY = "vip_monthly"
-        const val THREE_MONTHS = "vip_3months"
+        const val THREE_MONTHS = "vip_quarterly"
         const val YEARLY = "vip_yearly"
         const val LIFETIME = "vip_lifetime"
         private val SUBSCRIPTION_IDS = setOf(MONTHLY, THREE_MONTHS, YEARLY)
@@ -31,7 +30,7 @@ class BazaarBillingManager(
                 localSecurityCheck = if (BuildConfig.DEBUG) {
                     SecurityCheck.Disable
                 } else {
-                    SecurityCheck.Enable(rsaPublicKey = BuildConfig.BAZAAR_RSA_PUBLIC_KEY)
+                    SecurityCheck.Enable(rsaPublicKey = BazaarConfig.RSA_PUBLIC_KEY)
                 },
                 shouldSupportSubscription = true
             )
