@@ -2,7 +2,7 @@ name: Android Build
 
 on:
   push:
-    branches: [main, tapsell-vip-integration, feature/vip-tapsell-final, fix/startup-crash-v2]
+    branches: [main, tapsell-vip-integration, feature/vip-tapsell-final, fix/startup-crash-v2, fix/cafebazaar-vip-payment-v5]
   pull_request:
     branches: [main, feature/vip-tapsell-final]
   workflow_dispatch:
@@ -132,7 +132,7 @@ jobs:
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
           test -x "$AAPT"
           BADGING="$("$AAPT" dump badging "$RELEASE_APK")"
-          printf '%s\n' "$BADGING" | grep -F "package: name='com.aistudio.studiotaraneh.vmpzrq' versionCode='4' versionName='1.1.2' "
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.aistudio.studiotaraneh.vmpzrq' versionCode='5' versionName='1.1.3' "
 
       - name: Upload signed release APK
         uses: actions/upload-artifact@v4
