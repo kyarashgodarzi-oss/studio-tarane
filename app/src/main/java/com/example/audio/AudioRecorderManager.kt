@@ -44,11 +44,19 @@ class AudioRecorderManager(private val context: Context) {
                 startTimeMillis = System.currentTimeMillis()
             } catch (e: IOException) {
                 Log.e("AudioRecorder", "Recording prepare failed", e)
-                release()
+                try { release() } catch (_: Exception) {}
+                file.delete()
+                currentOutputFile = null
+                isRecording = false
+                isPaused = false
                 return null
             } catch (e: Exception) {
                 Log.e("AudioRecorder", "Recording start failed", e)
-                release()
+                try { release() } catch (_: Exception) {}
+                file.delete()
+                currentOutputFile = null
+                isRecording = false
+                isPaused = false
                 return null
             }
         }
@@ -81,15 +89,14 @@ class AudioRecorderManager(private val context: Context) {
     fun stopRecording(): Long {
         if (!isRecording) return 0L
         val duration = System.currentTimeMillis() - startTimeMillis
+        val recorder = mediaRecorder
         try {
-            mediaRecorder?.apply {
-                stop()
-                reset()
-                release()
-            }
+            recorder?.stop()
         } catch (e: Exception) {
             Log.e("AudioRecorder", "Stop recording failed", e)
         } finally {
+            try { recorder?.reset() } catch (_: Exception) {}
+            try { recorder?.release() } catch (_: Exception) {}
             mediaRecorder = null
             isRecording = false
             isPaused = false

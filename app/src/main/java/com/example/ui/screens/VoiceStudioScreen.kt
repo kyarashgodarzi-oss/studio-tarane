@@ -92,6 +92,7 @@ fun VoiceStudioScreen(
     val strings = LocalStudioStrings.current
     val context = LocalContext.current
     val recordings by viewModel.voiceRecordings.collectAsState()
+    val isVip by viewModel.preferences.isVip.collectAsState()
     val isRecordingGlobal by viewModel.isRecordingGlobal.collectAsState()
     val currentPlayingPath by viewModel.currentPlayingPath.collectAsState()
     val playbackProgress by viewModel.playbackProgress.collectAsState()
@@ -227,6 +228,24 @@ fun VoiceStudioScreen(
                     )
                 }
             }
+        }
+
+        if (!isVip) {
+            Button(
+                onClick = {
+                    context.startActivity(
+                        Intent(context, com.example.ads.AdsShowcaseActivity::class.java)
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("ویدیوی آموزشی استودیو")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         // Section Title: Saved Memos

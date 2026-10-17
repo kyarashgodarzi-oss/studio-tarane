@@ -63,33 +63,64 @@ class StudioPreferences(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("studio_taraneh_prefs", Context.MODE_PRIVATE)
 
+    // Preferences can outlive app versions. Handle unknown enum names and values stored
+    // under the wrong type so corrupt/legacy settings cannot crash ViewModel creation.
+    private inline fun <reified T : Enum<T>> readEnumPreference(
+        key: String,
+        defaultValue: T
+    ): T {
+        val storedValue = try {
+            prefs.getString(key, null)
+        } catch (_: ClassCastException) {
+            null
+        }
+        return storedValue?.let { value ->
+            enumValues<T>().firstOrNull { it.name == value }
+        } ?: defaultValue
+    }
+
     private val _themeMode = MutableStateFlow(
-        AppThemeMode.valueOf(prefs.getString("theme_mode", AppThemeMode.NEON_STUDIO.name) ?: AppThemeMode.NEON_STUDIO.name)
+        readEnumPreference("theme_mode", AppThemeMode.NEON_STUDIO)
     )
     val themeMode: StateFlow<AppThemeMode> = _themeMode.asStateFlow()
 
     private val _dayNight = MutableStateFlow(
-        DayNightOption.valueOf(prefs.getString("day_night", DayNightOption.DARK.name) ?: DayNightOption.DARK.name)
+        readEnumPreference("day_night", DayNightOption.DARK)
     )
     val dayNight: StateFlow<DayNightOption> = _dayNight.asStateFlow()
 
     private val _fontSize = MutableStateFlow(
-        EditorFontSize.valueOf(prefs.getString("font_size", EditorFontSize.MEDIUM.name) ?: EditorFontSize.MEDIUM.name)
+        readEnumPreference("font_size", EditorFontSize.MEDIUM)
     )
     val fontSize: StateFlow<EditorFontSize> = _fontSize.asStateFlow()
 
-    // Default language is ALWAYS Persian (fa) - Requirement 30 & Mandatory fix
-    // Key MUST return "fa", absolutely no fallback to "en"
+    // Default language is Persian until the user explicitly selects another language.
+    private fun readBooleanPreference(key: String, defaultValue: Boolean): Boolean {
+        return try {
+            prefs.getBoolean(key, defaultValue)
+        } catch (_: ClassCastException) {
+            defaultValue
+        }
+    }
+
+    private fun readStringPreference(key: String, defaultValue: String): String {
+        return try {
+            prefs.getString(key, defaultValue) ?: defaultValue
+        } catch (_: ClassCastException) {
+            defaultValue
+        }
+    }
+
     private val _language = MutableStateFlow(
-        if (!prefs.getBoolean("has_user_selected_language", false)) {
+        if (!readBooleanPreference("has_user_selected_language", false)) {
             AppLanguage.PERSIAN
         } else {
-            AppLanguage.fromCode(prefs.getString("app_language", "fa"))
+            AppLanguage.fromCode(readStringPreference("app_language", "fa"))
         }
     )
     val language: StateFlow<AppLanguage> = _language.asStateFlow()
 
-    private val _isVip = MutableStateFlow(prefs.getBoolean("is_vip_user", false))
+    private val _isVip = MutableStateFlow(readBooleanPreference("is_vip_user", false))
     val isVip: StateFlow<Boolean> = _isVip.asStateFlow()
 
     fun setThemeMode(mode: AppThemeMode) {

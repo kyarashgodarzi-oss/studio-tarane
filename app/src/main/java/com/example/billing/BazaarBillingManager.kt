@@ -16,41 +16,67 @@ class BazaarBillingManager(
 ) {
     companion object {
         const val MONTHLY = "vip_monthly"
-        const val THREE_MONTHS = "vip_3months"
+        const val THREE_MONTHS = "vip_quarterly"
         const val YEARLY = "vip_yearly"
         const val LIFETIME = "vip_lifetime"
         private val SUBSCRIPTION_IDS = setOf(MONTHLY, THREE_MONTHS, YEARLY)
     }
 
-    private val payment = Payment(
-        context = context.applicationContext,
-        config = PaymentConfiguration(
-            localSecurityCheck = SecurityCheck.Enable(rsaPublicKey = BuildConfig.BAZAAR_RSA_PUBLIC_KEY),
-            shouldSupportSubscription = true
+    private val applicationContext = context.applicationContext
+
+    private val payment: Payment by lazy {
+        Payment(
+            context = applicationContext,
+            config = PaymentConfiguration(
+                localSecurityCheck = if (BuildConfig.DEBUG) {
+                    SecurityCheck.Disable
+                } else {
+                    SecurityCheck.Enable(rsaPublicKey = BazaarConfig.RSA_PUBLIC_KEY)
+                },
+                shouldSupportSubscription = true
+            )
         )
-    )
+    }
     private var connection: Connection? = null
+    @Volatile private var isConnected = false
 
     fun connect() {
         if (connection != null) return
-        connection = payment.connect {
-            connectionSucceed {
-                onMessage("اتصال به کافه‌بازار برقرار شد")
-                restorePurchases()
+        try {
+            connection = payment.connect {
+                connectionSucceed {
+                    isConnected = true
+                    onMessage("اتصال به کافه‌بازار برقرار شد")
+                    restorePurchases()
+                }
+                connectionFailed { error ->
+                    isConnected = false
+                    connection = null
+                    onMessage("اتصال به کافه‌بازار ناموفق بود: " + (error.message ?: "خطای نامشخص"))
+                }
+                disconnected {
+                    isConnected = false
+                    connection = null
+                }
             }
-            connectionFailed { error ->
-                onMessage("اتصال به کافه‌بازار ناموفق بود: " + (error.message ?: "خطای نامشخص"))
-            }
-            disconnected { connection = null }
+        } catch (t: Throwable) {
+            connection = null
+            onMessage("اتصال به کافه‌بازار در دسترس نیست")
         }
     }
 
     fun disconnect() {
+        isConnected = false
         connection?.disconnect()
         connection = null
     }
 
     fun purchase(activity: ComponentActivity, productId: String) {
+        if (!isConnected) {
+            onMessage("اتصال به کافه‌بازار برقرار نیست؛ چند لحظه صبر کنید و دوباره تلاش کنید")
+            connect()
+            return
+        }
         payment.purchaseProduct(
             registry = activity.activityResultRegistry,
             request = PurchaseRequest(productId = productId, payload = "studio_taraneh_vip")
@@ -68,6 +94,11 @@ class BazaarBillingManager(
     }
 
     fun subscribe(activity: ComponentActivity, productId: String) {
+        if (!isConnected) {
+            onMessage("اتصال به کافه‌بازار برقرار نیست؛ چند لحظه صبر کنید و دوباره تلاش کنید")
+            connect()
+            return
+        }
         payment.subscribeProduct(
             registry = activity.activityResultRegistry,
             request = PurchaseRequest(productId = productId, payload = "studio_taraneh_vip")

@@ -26,14 +26,18 @@ class AudioPlayerManager {
 
         // If already playing this file, toggle or resume
         if (currentPlayingPath == filePath && mediaPlayer != null) {
-            if (mediaPlayer?.isPlaying == true) {
-                pause()
-                return
-            } else {
-                mediaPlayer?.start()
-                startProgressPolling(onProgress)
-                return
+            try {
+                if (mediaPlayer?.isPlaying == true) {
+                    pause()
+                } else {
+                    mediaPlayer?.start()
+                    startProgressPolling(onProgress)
+                }
+            } catch (e: Exception) {
+                Log.e("AudioPlayer", "Unable to resume playback", e)
+                stop()
             }
+            return
         }
 
         stop()
@@ -102,14 +106,16 @@ class AudioPlayerManager {
         progressRunnable = object : Runnable {
             override fun run() {
                 val mp = mediaPlayer
-                if (mp != null && mp.isPlaying) {
-                    try {
+                try {
+                    if (mp != null && mp.isPlaying) {
                         val current = mp.currentPosition
                         val total = mp.duration
                         onProgress(current, total)
                         handler.postDelayed(this, 100)
-                    } catch (_: Exception) {
                     }
+                } catch (e: Exception) {
+                    Log.w("AudioPlayer", "Playback progress polling stopped", e)
+                    stopProgressPolling()
                 }
             }
         }

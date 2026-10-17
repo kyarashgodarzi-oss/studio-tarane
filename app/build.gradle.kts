@@ -1,4 +1,6 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -6,6 +8,13 @@ plugins {
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.secrets)
     alias(libs.plugins.google.services)
+}
+
+val releaseSigningPropertiesFile = rootProject.file("key.properties")
+val releaseSigningProperties = Properties().apply {
+    if (releaseSigningPropertiesFile.exists()) {
+        FileInputStream(releaseSigningPropertiesFile).use { load(it) }
+    }
 }
 
 android {
@@ -16,14 +25,35 @@ android {
         applicationId = "com.aistudio.studiotaraneh.vmpzrq"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 5
+        versionName = "1.1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningPropertiesFile.exists()) {
+                storeFile = rootProject.file(
+                    releaseSigningProperties.getProperty("storeFile")
+                        ?: error("storeFile is missing from key.properties")
+                )
+                storePassword = releaseSigningProperties.getProperty("storePassword")
+                    ?: error("storePassword is missing from key.properties")
+                keyAlias = releaseSigningProperties.getProperty("keyAlias")
+                    ?: error("keyAlias is missing from key.properties")
+                keyPassword = releaseSigningProperties.getProperty("keyPassword")
+                    ?: error("keyPassword is missing from key.properties")
+                storeType = "PKCS12"
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseSigningPropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isCrunchPngs = false
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -82,6 +112,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.retrofit)
     implementation(libs.tapsellPlus)
+    implementation("androidx.media3:media3-ui:1.1.1")
+    implementation("androidx.media3:media3-exoplayer:1.1.1")
+    implementation("com.google.ads.interactivemedia.v3:interactivemedia:3.33.0")
     implementation(libs.poolakey)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.core)

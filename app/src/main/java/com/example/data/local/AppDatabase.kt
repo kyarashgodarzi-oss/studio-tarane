@@ -1,6 +1,7 @@
 package com.example.data.local
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -49,9 +50,13 @@ abstract class AppDatabase : RoomDatabase() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
                 // Seed initial introductory sample song for first-time artists
-                INSTANCE?.let { database ->
-                    CoroutineScope(Dispatchers.IO).launch {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val database = INSTANCE ?: return@launch
                         populateInitialSample(database.songDao())
+                    } catch (e: Exception) {
+                        // Sample content is optional. A seed failure must not crash app startup.
+                        Log.e("AppDatabase", "Initial sample song could not be created", e)
                     }
                 }
             }
