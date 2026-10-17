@@ -2,6 +2,7 @@ package com.example.billing
 
 import android.content.Context
 import androidx.activity.ComponentActivity
+import com.example.BuildConfig
 import ir.cafebazaar.poolakey.Connection
 import ir.cafebazaar.poolakey.Payment
 import ir.cafebazaar.poolakey.config.PaymentConfiguration
