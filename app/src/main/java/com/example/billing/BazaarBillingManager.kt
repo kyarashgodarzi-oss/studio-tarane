@@ -38,19 +38,26 @@ class BazaarBillingManager(
         )
     }
     private var connection: Connection? = null
+    @Volatile private var isConnected = false
 
     fun connect() {
         if (connection != null) return
         try {
             connection = payment.connect {
                 connectionSucceed {
+                    isConnected = true
                     onMessage("اتصال به کافه‌بازار برقرار شد")
                     restorePurchases()
                 }
                 connectionFailed { error ->
+                    isConnected = false
+                    connection = null
                     onMessage("اتصال به کافه‌بازار ناموفق بود: " + (error.message ?: "خطای نامشخص"))
                 }
-                disconnected { connection = null }
+                disconnected {
+                    isConnected = false
+                    connection = null
+                }
             }
         } catch (t: Throwable) {
             connection = null
@@ -59,11 +66,17 @@ class BazaarBillingManager(
     }
 
     fun disconnect() {
+        isConnected = false
         connection?.disconnect()
         connection = null
     }
 
     fun purchase(activity: ComponentActivity, productId: String) {
+        if (!isConnected) {
+            onMessage("اتصال به کافه‌بازار برقرار نیست؛ چند لحظه صبر کنید و دوباره تلاش کنید")
+            connect()
+            return
+        }
         payment.purchaseProduct(
             registry = activity.activityResultRegistry,
             request = PurchaseRequest(productId = productId, payload = "studio_taraneh_vip")
@@ -81,6 +94,11 @@ class BazaarBillingManager(
     }
 
     fun subscribe(activity: ComponentActivity, productId: String) {
+        if (!isConnected) {
+            onMessage("اتصال به کافه‌بازار برقرار نیست؛ چند لحظه صبر کنید و دوباره تلاش کنید")
+            connect()
+            return
+        }
         payment.subscribeProduct(
             registry = activity.activityResultRegistry,
             request = PurchaseRequest(productId = productId, payload = "studio_taraneh_vip")
